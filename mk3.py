@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, redirect
 import os 
 
 # Explicitly set the template folder
@@ -23,11 +23,18 @@ def get_health_data():
         "NAME": name,
         "AGE": age,
         "SEX": sex,
-        "blood_pressure(mmHg)": bp,
-        "oxygen_saturation(%)": oxi,
-        "temperature(°C)": temp,
+        #"blood_pressure(mmHg)": bp,
+        #"oxygen_saturation(%)": oxi,
+        #"temperature(°C)": temp,
     }
     return jsonify(data)
+@app.route("/open-omron") #dadalhin ka sa omron via deeplink, SANA MERON
+def open_omron():
+    return redirect("intent://omronconnect://open#Intent;scheme=omronconnect;package=com.omronhealthcare.omronconnect;end;")
+
+@app.route("/open-healthtree")
+def open_healthtree(): #DEEPLINK NG HEALTHtREE NMN, SANA MERON
+    return redirect("intent://healthtree://open#Intent;scheme=healthtree;package=com.healthtree.app;end;")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT",10000)) #default port daw ni Render
