@@ -26,17 +26,17 @@
         <label for="sex">Sex(Male/Female)</label>
         <input type="text" id="sex" name="sex" required><br><br>
         
-        <!-- Blood Pressure Input Field -->
+        <!-- Blood Pressure Input Field 
         <label for="bp">Blood Pressure(mmHg):</label>
-        <input type="text" id="bp" name="bp"><br><br>
+        <input type="text" id="bp" name="bp"><br><br>                       -->
         
-        <!-- Oxygen Saturation Input Field -->
+        <!-- Oxygen Saturation Input Field 
         <label for="oxygen">Oxygen Saturation(%):</label>
-        <input type="text" id="oxygen" name="oxygen"><br><br>
+        <input type="text" id="oxygen" name="oxygen"><br><br>               -->
         
-        <!-- Temperature Input Field -->
+        <!-- Temperature Input Field 
         <label for="temp">Temperature(°C):</label>
-        <input type="text" id="temp" name="temp"><br><br>
+        <input type="text" id="temp" name="temp"><br><br>                   -->
         
         <!-- Submit Button -->
         <button type="submit">Enter</button>
@@ -45,6 +45,12 @@
     <!-- Area to display the response from the server -->
     <h3>Health Data Response:</h3>
     <pre id="response"></pre>
+
+    <h4>Blood Pressure</h4>
+    <button onclick="openOmron()">Click to go to Omron Connect</button> <!--pang bp-->
+
+    <h5>Oxygen Saturation</h5> 
+    <button onclick="openHealthTree()">Click to go to HealthTree</button> <!--pang bp-->
     
     <script>
         // Attach an event listener to the form submission
@@ -65,6 +71,12 @@
             })
             .catch(error => console.error("Error:", error));  // Logs errors (if any)
         });
+        function openOmron(){
+            window.location.href = "/open-omron";
+        } //kukunin ung omron sa python code mo pre
+        function openHealthTree(){
+            window.location.href = "/open-healthtree";
+        } //kukunin ung healthtree sa python code
     </script>
 </body>
 </html>
