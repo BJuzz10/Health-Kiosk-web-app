@@ -30,11 +30,13 @@ def get_health_data():
     return jsonify(data)
 @app.route("/open-omron") #dadalhin ka sa omron via deeplink, SANA MERON
 def open_omron():
-    return redirect("intent://omronconnect://open#Intent;scheme=omronconnect;package=com.omronhealthcare.omronconnect;end;")
-
+    #return redirect("intent://omronconnect://open#Intent;scheme=omronconnect;package=com.omronhealthcare.omronconnect;end;")
+    return redirect("https://play.google.com/store/apps/details?id=jp.co.omron.healthcare.omron_connect") #Google playstore link
+    
 @app.route("/open-healthtree")
 def open_healthtree(): #DEEPLINK NG HEALTHtREE NMN, SANA MERON
-    return redirect("intent://healthtree://open#Intent;scheme=healthtree;package=com.healthtree.app;end;")
+    #return redirect("intent://healthtree://open#Intent;scheme=healthtree;package=com.healthtree.app;end;")
+    return redirect("https://play.google.com/store/apps/details?id=com.jks.Spo2MonitorEx") #Google playstore link
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT",10000)) #default port daw ni Render
