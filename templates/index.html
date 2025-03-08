@@ -9,7 +9,7 @@
 </head>
 <body>
     <!-- Main heading -->
-    <h1>Welcome to Mark3.5 Health Kiosk</h1>
+    <h1>Welcome to Mark4 Health Kiosk</h1>
     <h2>Enter Your Health Data</h2>
     
     <!-- Form where users input their health data -->
@@ -26,18 +26,6 @@
         <label for="sex">Sex(Male/Female)</label>
         <input type="text" id="sex" name="sex" required><br><br>
         
-        <!-- Blood Pressure Input Field 
-        <label for="bp">Blood Pressure(mmHg):</label>
-        <input type="text" id="bp" name="bp"><br><br>                       -->
-        
-        <!-- Oxygen Saturation Input Field 
-        <label for="oxygen">Oxygen Saturation(%):</label>
-        <input type="text" id="oxygen" name="oxygen"><br><br>               -->
-        
-        <!-- Temperature Input Field 
-        <label for="temp">Temperature(°C):</label>
-        <input type="text" id="temp" name="temp"><br><br>                   -->
-        
         <!-- Submit Button -->
         <button type="submit">Enter</button>
     </form>
@@ -51,6 +39,9 @@
 
     <h5>Oxygen Saturation</h5> 
     <button onclick="openHealthTree()">Click to go to HealthTree</button> <!--pang bp-->
+
+    <h6>Temperature</h6>
+    <button onclick="openMedM()">Click to go to MedM Health</button> <!--pang temperature-->
     
     <script>
         // Attach an event listener to the form submission
@@ -77,6 +68,11 @@
         function openHealthTree(){
             window.location.href = "/open-healthtree";
         } //kukunin ung healthtree sa python code
+        function openMedM(){
+            window.location.href = "/open-medm";
+        }
+
+        
     </script>
 </body>
 </html>
