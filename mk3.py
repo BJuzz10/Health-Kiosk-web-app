@@ -35,7 +35,7 @@ def open_healthtree(): #DEEPLINK NG HEALTHtREE NMN, SANA MERON
 
 @app.route("/open-medm")
 def open_medm(): 
-    return redirect("https://play.google.com/store/apps/details?id=com.medm.app.health") #Google playstore link
+    return redirect("https://play.google.com/store/apps/details?id=com.beurer.healthmanager") #Google playstore link
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT",10000)) #default port daw ni Render
