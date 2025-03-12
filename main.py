@@ -16,5 +16,5 @@ def open_medm():
     return redirect("https://play.google.com/store/apps/details?id=com.beurer.healthmanager")
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=80, debug=True)
+    app.run(host="0.0.0.0", port=10000, debug=True)
 
