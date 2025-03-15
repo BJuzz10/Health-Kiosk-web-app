@@ -22,7 +22,7 @@ Ung mk4Dev-Branch ay ung branch na ginagamit ng Render web hosting. Currently li
 - Mark 8: UI/UX improvement phase. Use CSS to make the web app appealing for end users. Add additinal instructions for end users how to navigate the web app, as well as instructions for the medical devices apps so that users know how use and to export csv/xls output to Google Drive. Since walang public API details for the said medical devices apps mentioned in Mark 6(or atleast to my knowledge and research), we have to rely on using deeplinks and export csv/xls functions ng apps in order to integrate those apps sa health kiosk web app natin. So exporting csv/xls files is very important for the backend data processing/frontend display. Also add Google meet links for health kiosk patient to doctor online consultations for telemedicine. Online consultations ang pinaka "use" ng Health kiosk talaga para makapag consult ang mga tao from GIDA locations to a doctor. Doctors must also be able to send their "reseta" to the patients who use the health kiosk, and the web app must be able to display ung reseta ng doctor to that patient. 
 
 # Current phase: Mark 4
-Problems encountered that hindered Mark 4's progress: encountered bugs after trying to use aws database for firebase authentication 
+Problems encountered that hindered Mark 4's progress: encountered bugs after trying to use aws database for firebase authentication(try to run python auth.py on terminal seen on AuthHelpDev branch to see bugs).  
 
 # Important Notes
 - Omron Connect and Beurer HealthManager Pro can export data as csv. HealthTree app can only send data as xls, so need sya maconvert into csv in the backend after exporting.
