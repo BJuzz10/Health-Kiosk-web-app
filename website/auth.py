@@ -18,22 +18,6 @@ firebase_config = {
 firebase=pyrebase.initialize_app(firebase_config)
 auth=firebase.auth()
 
-#Flask app and postgre connection
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://db-healthkiosk-instance-1.cp6c4goakaid.ap-southeast-2.rds.amazonaws.com"
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False 
-db = SQLAlchemy(app)
-
-#define user model
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    uid = db.Column(db.String(255), unique=True, nullable=False)
-    email = db.Column(db.String(255), unique=True, nullable=False)
-
-# Create Table
-with app.app_context():
-    db.create_all()
-
 #def signup
 def signup():
     print("Sign up...")
@@ -42,24 +26,19 @@ def signup():
     try:
         user = auth.create_user_with_email_and_password(email, password)
         uid = user['localID']
-        #Store user in PostgreSQL
-        new_user = User(uid=uid, email=email)
-        db.session.add(new_user)
-        db.session.commit()
-        print(f"User {email} successfully registered.")
-    except Exception as e:
-        print(f"Error {e}")
+    except pyrebase.pyrebase.AuthError as e:
+        print(f"Error during sign up: {e}")
     return
 
 def login():
     print("Log in...")
     email = input("Enter your email: ")
-    password = input("Enter your password")
+    password = input("Enter your password: ")
     try:
         user = auth.sign_in_with_email_and_password(email, password)
-        print(f"Login Successful! Welcome {email}!")
-    except Exception as e:
-        print(f"Login failed: {e}")
+        #print(f"Log in successful! Welcome {email}!")
+    except pyrebase.pyrebase.AuthError as e:
+        print(f"Error during sign up: {e}")
     
 ans = input("Are you a new user?[y/n]")
 
