@@ -29,3 +29,4 @@ Problems encountered that hindered Mark 4's progress: encountered bugs after try
 - Health Kiosk Web App must be able to display telemedicine/telemetry features. Which is why importante na kaya ng health kiosk makapag conduct ng online consultations, receive/print out "resetas", as well as use the medical devices of the health kiosk.
 - programming languages used: python(backend logic), HTML(sturcture), CSS(Mark 8 phase, for web app style)
 - Eventually need ilipat ang web hosting from Render to AWS since ang free tier ng Render ay may cool down every 15mins of being inactive which would be a problem sa User experience ng health kiosk
+- mk4Dev-branch is currently LIVE on Render, do not modify unless ready 
