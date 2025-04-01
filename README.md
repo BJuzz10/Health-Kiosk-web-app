@@ -24,4 +24,10 @@ curl -b cookies.txt -X POST http://127.0.0.1:5000/filter_csv -F "file=@Beurer.cs
 # To See data filtering process refer to ipynbCode folder
 - this is a separate folder that has no backend functions, it's where it shows how data filtering logic works
 - Beurer.csv is the unfiltered csv where you can observe that data are displayed in one columnn as well as data from previous users
-- OutputTemp.csv is the filtered results where it displays the temperature data 
+- OutputTemp.csv is the filtered results where it displays the temperature data
+
+## Expected output
+```bash
+#columns:
+Temperature, Date&Time
+```
