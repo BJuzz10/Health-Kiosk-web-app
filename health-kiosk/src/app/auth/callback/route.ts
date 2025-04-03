@@ -5,13 +5,6 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
 
-  // Get the base URL (works in both local and deployed environments)
-  const baseUrl = requestUrl.origin;
-
-  // Default next path
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const next = requestUrl.searchParams.get("next") ?? "/";
-
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -25,13 +18,17 @@ export async function GET(request: Request) {
         redirectPath = "/admindash"; // For admin/healthcare workers
       }
 
-      // Log the redirect URL for debugging
-      console.log(`Redirecting to: ${baseUrl}${redirectPath}`);
+      // Use absolute URL for redirect to ensure we don't use localhost in production
+      const deployedUrl = process.env.NEXT_PUBLIC_SITE_URL || requestUrl.origin;
 
-      return NextResponse.redirect(`${baseUrl}${redirectPath}`);
+      // Log the redirect URL for debugging
+      console.log(`Redirecting to: ${deployedUrl}${redirectPath}`);
+
+      return NextResponse.redirect(`${deployedUrl}${redirectPath}`);
     }
   }
 
   // Return the user to an error page with instructions
-  return NextResponse.redirect(`${baseUrl}/auth/auth-code-error`);
+  const deployedUrl = process.env.NEXT_PUBLIC_SITE_URL || requestUrl.origin;
+  return NextResponse.redirect(`${deployedUrl}/auth/auth-code-error`);
 }
