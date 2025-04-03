@@ -6,9 +6,11 @@ const supabase = createClient();
 // Function to sign in with Google
 export async function signInWithGoogle() {
   try {
-    // Use environment variable for the deployed URL if available
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-    const redirectUrl = new URL("/auth/callback", siteUrl).toString();
+    // Get the base URL from the environment or window location
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+
+    // Ensure we're using the direct callback URL
+    const redirectUrl = `${baseUrl}/auth/callback`;
 
     console.log("Redirect URL for Google auth:", redirectUrl);
 
@@ -65,9 +67,11 @@ export async function signInWithEmail(email: string, password: string) {
 // Function to sign up with email and password
 export async function signUpWithEmail(email: string, password: string) {
   try {
-    // Use environment variable for the deployed URL if available
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-    const redirectUrl = new URL("/auth/callback", siteUrl).toString();
+    // Get the base URL from the environment or window location
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+
+    // Ensure we're using the direct callback URL
+    const redirectUrl = `${baseUrl}/auth/callback`;
 
     const { data, error } = await supabase.auth.signUp({
       email,
