@@ -49,6 +49,9 @@ export async function signInWithGoogle(source?: string) {
       throw error;
     }
 
+    // After successful Google sign-in, check if we need to create initial patient data
+    // This will be handled in the callback route since this redirects to Google
+
     return data;
   } catch (error) {
     console.error("Google sign-in error:", error);

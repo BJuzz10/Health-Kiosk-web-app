@@ -9,6 +9,7 @@ import { hasCompletePatientData } from "@/lib/patient-data"
 import { useRouter } from "next/navigation"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
+import { savePatientData } from "@/lib/patient-data"
 
 export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false)
@@ -39,7 +40,7 @@ export default function AuthPage() {
     }
   }
 
-  // Update the handleEmailAuth function to use the source parameter for signup
+  // Update the handleEmailAuth function to save patient data during signup
   const handleEmailAuth = async (e: FormEvent) => {
     e.preventDefault()
 
@@ -54,7 +55,22 @@ export default function AuthPage() {
 
       if (isSignUp) {
         // For signup, pass the source parameter
-        await signUpWithEmail(email, password, "userlogin")
+        const { user } = await signUpWithEmail(email, password, "userlogin")
+
+        // Save the user's name and email to patient_data table
+        if (user && fullName) {
+          await savePatientData({
+            email: email,
+            name: fullName,
+            age: null,
+            sex: null,
+            address: null,
+            contact: null,
+            height: null,
+            weight: null,
+          })
+        }
+
         // Show success message for sign up
         setError("Check your email for a confirmation link!")
       } else {

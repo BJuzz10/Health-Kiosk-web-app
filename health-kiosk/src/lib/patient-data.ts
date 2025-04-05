@@ -7,6 +7,7 @@ export interface PatientData {
   name: string | null;
   age: number | null;
   sex: string | null;
+  birthday: Date | null;
   address: string | null;
   contact: string | null;
   height: number | null;
