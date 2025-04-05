@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { FcGoogle } from "react-icons/fc"
 import { signInWithGoogle, signInWithEmail, signUpWithEmail } from "@/lib/supabase-auth"
+import { hasCompletePatientData } from "@/lib/patient-data"
 import { useRouter } from "next/navigation"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
@@ -18,7 +19,7 @@ export default function AuthPage() {
   const [fullName, setFullName] = useState("")
   const router = useRouter()
 
-  // Handle Google Sign-In
+  // Update the handleGoogleSignIn function to include the source parameter
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true)
@@ -27,7 +28,8 @@ export default function AuthPage() {
       // Log the current origin for debugging
       console.log("Current origin:", window.location.origin)
 
-      await signInWithGoogle()
+      // Pass the source parameter to identify this is from user login
+      await signInWithGoogle("userlogin")
       // The redirect will be handled by the callback route
     } catch (error: any) {
       console.error("Google sign-in error:", error)
@@ -37,7 +39,7 @@ export default function AuthPage() {
     }
   }
 
-  // Handle Email/Password Authentication
+  // Update the handleEmailAuth function to use the source parameter for signup
   const handleEmailAuth = async (e: FormEvent) => {
     e.preventDefault()
 
@@ -51,13 +53,22 @@ export default function AuthPage() {
       setError(null)
 
       if (isSignUp) {
-        await signUpWithEmail(email, password)
+        // For signup, pass the source parameter
+        await signUpWithEmail(email, password, "userlogin")
         // Show success message for sign up
         setError("Check your email for a confirmation link!")
       } else {
         const { user } = await signInWithEmail(email, password)
         if (user) {
-          router.push("/dashboard")
+          // Check if user has complete patient data
+          const hasData = await hasCompletePatientData(user.email!)
+
+          // Redirect based on data existence
+          if (user.email?.includes("admin") || user.email?.includes("doctor")) {
+            router.push("/admindash")
+          } else {
+            router.push(hasData ? "/dashboard" : "/user")
+          }
         }
       }
     } catch (error: any) {

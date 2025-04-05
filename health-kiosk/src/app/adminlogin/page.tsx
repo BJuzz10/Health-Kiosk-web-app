@@ -18,7 +18,7 @@ export default function AuthPage() {
   const [fullName, setFullName] = useState("")
   const router = useRouter()
 
-  // Handle Google Sign-In
+  // Update the handleGoogleSignIn function to include the source parameter
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true)
@@ -27,7 +27,8 @@ export default function AuthPage() {
       // Log the current origin for debugging
       console.log("Current origin:", window.location.origin)
 
-      await signInWithGoogle()
+      // Pass the source parameter to identify this is from admin login
+      await signInWithGoogle("adminlogin")
       // The redirect will be handled by the callback route
     } catch (error: any) {
       console.error("Google sign-in error:", error)
@@ -37,7 +38,7 @@ export default function AuthPage() {
     }
   }
 
-  // Handle Email/Password Authentication
+  // Update the handleEmailAuth function to ensure direct redirection to admindash
   const handleEmailAuth = async (e: FormEvent) => {
     e.preventDefault()
 
@@ -51,13 +52,20 @@ export default function AuthPage() {
       setError(null)
 
       if (isSignUp) {
-        await signUpWithEmail(email, password)
+        // For signup, pass the source parameter
+        await signUpWithEmail(email, password, "adminlogin")
         // Show success message for sign up
         setError("Check your email for a confirmation link!")
       } else {
         const { user } = await signInWithEmail(email, password)
         if (user) {
-          router.push("/admindash")
+          // Always redirect to admindash from adminlogin page
+          console.log("Admin login successful, redirecting to /admindash")
+
+          // Add a small delay to ensure the session is properly set
+          setTimeout(() => {
+            router.push("/admindash")
+          }, 100)
         }
       }
     } catch (error: any) {
@@ -223,3 +231,4 @@ export default function AuthPage() {
   )
 }
 
+  

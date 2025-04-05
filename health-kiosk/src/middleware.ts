@@ -13,11 +13,16 @@ export async function middleware(request: NextRequest) {
     url.searchParams.has("code") &&
     !url.pathname.includes("/auth/callback")
   ) {
-    // Redirect to the callback route with the code
+    // Redirect to the callback route with the code and preserve source parameter
     const code = url.searchParams.get("code");
-    return NextResponse.redirect(
-      new URL(`/auth/callback?code=${code}`, request.url)
-    );
+    const source = url.searchParams.get("source");
+
+    let callbackUrl = `/auth/callback?code=${code}`;
+    if (source) {
+      callbackUrl += `&source=${source}`;
+    }
+
+    return NextResponse.redirect(new URL(callbackUrl, request.url));
   }
 
   return response;
