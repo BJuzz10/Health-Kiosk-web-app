@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
-import { FaChevronLeft, FaChevronRight, FaSave } from "react-icons/fa";
+import { FaChevronLeft, FaSave } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,38 +12,24 @@ import { AlertCircle, CheckCircle } from "lucide-react";
 import { savePatientData, getPatientData } from "@/lib/patient-data";
 import { getCurrentUser } from "@/lib/supabase-auth";
 
-interface FormData {
+interface PersonalFormData {
   fullName: string;
   age: string;
   sex: string;
   birthday: string;
   address: string;
   contactNumber: string;
-  height: string;
-  weight: string;
-  symptoms: string;
-  systolic: string;
-  diastolic: string;
-  oxygenSaturation: string;
-  temperature: string;
 }
 
-export default function PatientInformationKiosk() {
+export default function PersonalInformation() {
   const router = useRouter();
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<PersonalFormData>({
     fullName: "",
     age: "",
     sex: "",
     birthday: "",
     address: "",
     contactNumber: "",
-    height: "",
-    weight: "",
-    symptoms: "",
-    systolic: "",
-    diastolic: "",
-    oxygenSaturation: "",
-    temperature: "",
   });
 
   // Add alert state variables after the formData state
@@ -70,13 +56,6 @@ export default function PatientInformationKiosk() {
             birthday: "", // Birthday might need conversion from DB format
             address: patientData.address || "",
             contactNumber: patientData.contact || "",
-            height: patientData.height?.toString() || "",
-            weight: patientData.weight?.toString() || "",
-            symptoms: "",
-            systolic: "",
-            diastolic: "",
-            oxygenSaturation: "",
-            temperature: "",
           });
         }
       }
@@ -121,8 +100,6 @@ export default function PatientInformationKiosk() {
         birthday: formData.birthday ? new Date(formData.birthday) : null,
         address: formData.address,
         contact: formData.contactNumber,
-        height: formData.height ? Number.parseFloat(formData.height) : null,
-        weight: formData.weight ? Number.parseFloat(formData.weight) : null,
       });
 
       if (success) {
@@ -149,13 +126,10 @@ export default function PatientInformationKiosk() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 flex flex-col items-center relative">
-      {/* Time Display */}
+    <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white p-4 flex flex-col items-center justify-center relative">
       <div className="absolute top-4 right-6 text-gray-700 text-lg font-semibold">
         {time.toLocaleTimeString()}
       </div>
-
-      {/* Title */}
       <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-800 mb-4 text-center">
         Patient Information System
       </h1>
@@ -179,163 +153,78 @@ export default function PatientInformationKiosk() {
       {/* Form Container */}
       <form
         onSubmit={handleSave}
-        className="w-full max-w-5xl bg-white rounded-xl shadow-lg p-6 grid grid-cols-1 md:grid-cols-2 gap-6"
+        className="w-full max-w-6xl bg-white rounded-xl shadow-lg p-6 space-y-8"
       >
-        {/* Left Section: Personal Information */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <h2 className="col-span-1 md:col-span-2 text-lg font-semibold text-gray-700 mb-2 text-center md:text-left">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">
             Personal na Impormasyon
           </h2>
-          <div>
-            <Label htmlFor="fullName">Pangalan</Label>
-            <Input
-              id="fullName"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="age">Edad</Label>
-            <Input
-              id="age"
-              type="number"
-              name="age"
-              value={formData.age}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="sex">Kasarian</Label>
-            <Input
-              id="sex"
-              name="sex"
-              value={formData.sex}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="birthday">Petsa ng Kapanganakan</Label>
-            <Input
-              id="birthday"
-              type="date"
-              name="birthday"
-              value={formData.birthday}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="col-span-1 md:col-span-2">
-            <Label htmlFor="address">Address</Label>
-            <Textarea
-              id="address"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="contactNumber">Numero ng Telepono</Label>
-            <Input
-              id="contactNumber"
-              name="contactNumber"
-              value={formData.contactNumber}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="height">Taas (cm)</Label>
-            <Input
-              id="height"
-              type="number"
-              name="height"
-              value={formData.height}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="weight">Timbang (kg)</Label>
-            <Input
-              id="weight"
-              type="number"
-              name="weight"
-              value={formData.weight}
-              onChange={handleChange}
-              required
-            />
-          </div>
-        </div>
-
-        {/* Right Section: Medical Information */}
-        <div className="flex flex-col justify-between">
-          <h2 className="text-lg font-semibold text-gray-700 mb-2 text-center md:text-left">
-            Medikal na Impormasyon
-          </h2>
-          <div>
-            <h3 className="text-md font-semibold text-gray-700 mb-2">
-              Ano ang iyong karamdamang nais mong ipakonsulta?
-            </h3>
-            <Textarea
-              name="symptoms"
-              value={formData.symptoms}
-              onChange={handleChange}
-              placeholder="Ilagay ang iyong sagot dito..."
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label htmlFor="bloodPressure">Blood Pressure (mmHg)</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="systolic"
-                  name="systolic"
-                  type="number"
-                  value={formData.systolic}
-                  onChange={handleChange}
-                  placeholder="Systolic"
-                />
-                <Input
-                  id="diastolic"
-                  name="diastolic"
-                  type="number"
-                  value={formData.diastolic}
-                  onChange={handleChange}
-                  placeholder="Diastolic"
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="oxygenSaturation">
-                Oxygen Saturation (% SpO2)
-              </Label>
+              <Label htmlFor="fullName">Pangalan</Label>
               <Input
-                id="oxygenSaturation"
-                type="number"
-                name="oxygenSaturation"
-                value={formData.oxygenSaturation}
+                id="fullName"
+                name="fullName"
+                value={formData.fullName}
                 onChange={handleChange}
+                required
               />
             </div>
             <div>
-              <Label htmlFor="temperature">Temperatura (°C)</Label>
+              <Label htmlFor="age">Edad</Label>
               <Input
-                id="temperature"
+                id="age"
                 type="number"
-                name="temperature"
-                value={formData.temperature}
+                name="age"
+                value={formData.age}
                 onChange={handleChange}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="sex">Kasarian</Label>
+              <Input
+                id="sex"
+                name="sex"
+                value={formData.sex}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="birthday">Petsa ng Kapanganakan</Label>
+              <Input
+                id="birthday"
+                type="date"
+                name="birthday"
+                value={formData.birthday}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <Label htmlFor="address">Address</Label>
+              <Textarea
+                id="address"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="contactNumber">Numero ng Telepono</Label>
+              <Input
+                id="contactNumber"
+                name="contactNumber"
+                value={formData.contactNumber}
+                onChange={handleChange}
+                required
               />
             </div>
           </div>
         </div>
 
-        {/* Navigation Buttons */}
-        <div className="flex flex-col md:flex-row justify-between w-full col-span-1 md:col-span-2 mt-6 gap-2">
+        <div className="flex flex-col md:flex-row justify-between w-full max-w-6xl mt-6 gap-2 mx-auto">
           <Button
             type="button"
             variant="outline"
@@ -344,7 +233,7 @@ export default function PatientInformationKiosk() {
           >
             <FaChevronLeft /> Bumalik
           </Button>
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-end w-full md:w-auto">
             <Button
               type="submit"
               variant="outline"
@@ -352,14 +241,6 @@ export default function PatientInformationKiosk() {
               disabled={isLoading}
             >
               <FaSave /> {isLoading ? "Saving..." : "Save"}
-            </Button>
-            <Button
-              type="button"
-              onClick={() => router.push("/deeplink")}
-              className="flex items-center gap-2"
-              disabled={isLoading}
-            >
-              Susunod <FaChevronRight />
             </Button>
           </div>
         </div>
