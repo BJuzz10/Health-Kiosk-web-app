@@ -1,61 +1,67 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client"
+"use client";
 
-import { useState, type FormEvent } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { FcGoogle } from "react-icons/fc"
-import { signInWithGoogle, signInWithEmail, signUpWithEmail } from "@/lib/supabase-auth"
-import { hasCompletePatientData } from "@/lib/patient-data"
-import { useRouter } from "next/navigation"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
-import { savePatientData } from "@/lib/patient-data"
+import { useState, type FormEvent } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { FcGoogle } from "react-icons/fc";
+import {
+  signInWithGoogle,
+  signInWithEmail,
+  signUpWithEmail,
+} from "@/lib/supabase-auth";
+import { hasCompletePatientData } from "@/lib/patient-data";
+import { useRouter } from "next/navigation";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { savePatientData } from "@/lib/patient-data";
 
 export default function AuthPage() {
-  const [isSignUp, setIsSignUp] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [fullName, setFullName] = useState("")
-  const router = useRouter()
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const router = useRouter();
 
   // Update the handleGoogleSignIn function to include the source parameter
   const handleGoogleSignIn = async () => {
     try {
-      setIsLoading(true)
-      setError(null)
+      setIsLoading(true);
+      setError(null);
 
       // Log the current origin for debugging
-      console.log("Current origin:", window.location.origin)
+      console.log("Current origin:", window.location.origin);
 
       // Pass the source parameter to identify this is from user login
-      await signInWithGoogle("userlogin")
+      await signInWithGoogle("userlogin");
       // The redirect will be handled by the callback route
     } catch (error: any) {
-      console.error("Google sign-in error:", error)
-      setError(error.message || "Failed to sign in with Google. Please try again.")
+      console.error("Google sign-in error:", error);
+      setError(
+        error.message || "Failed to sign in with Google. Please try again."
+      );
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Update the handleEmailAuth function to save patient data during signup
   const handleEmailAuth = async (e: FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!email || !password) {
-      setError("Email and password are required")
-      return
+      setError("Email and password are required");
+      return;
     }
 
     try {
-      setIsLoading(true)
-      setError(null)
+      setIsLoading(true);
+      setError(null);
 
       if (isSignUp) {
         // For signup, pass the source parameter
-        const { user } = await signUpWithEmail(email, password, "userlogin")
+        const { user } = await signUpWithEmail(email, password, "userlogin");
 
         // Save the user's name and email to patient_data table
         if (user && fullName) {
@@ -68,32 +74,32 @@ export default function AuthPage() {
             contact: null,
             height: null,
             weight: null,
-          })
+          });
         }
 
         // Show success message for sign up
-        setError("Check your email for a confirmation link!")
+        setError("Check your email for a confirmation link!");
       } else {
-        const { user } = await signInWithEmail(email, password)
+        const { user } = await signInWithEmail(email, password);
         if (user) {
           // Check if user has complete patient data
-          const hasData = await hasCompletePatientData(user.email!)
+          const hasData = await hasCompletePatientData(user.email!);
 
           // Redirect based on data existence
           if (user.email?.includes("admin") || user.email?.includes("doctor")) {
-            router.push("/admindash")
+            router.push("/admindash");
           } else {
-            router.push(hasData ? "/dashboard" : "/user")
+            router.push(hasData ? "/dashboard" : "/user");
           }
         }
       }
     } catch (error: any) {
-      console.error("Email auth error:", error)
-      setError(error.message || "Authentication failed. Please try again.")
+      console.error("Email auth error:", error);
+      setError(error.message || "Authentication failed. Please try again.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-gray-100 overflow-hidden">
@@ -102,7 +108,9 @@ export default function AuthPage() {
         <div className="flex justify-center space-x-6 mb-6">
           <button
             className={`text-lg font-semibold pb-2 transition ${
-              !isSignUp ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-400"
+              !isSignUp
+                ? "text-blue-600 border-b-2 border-blue-600"
+                : "text-gray-400"
             }`}
             onClick={() => setIsSignUp(false)}
           >
@@ -110,7 +118,9 @@ export default function AuthPage() {
           </button>
           <button
             className={`text-lg font-semibold pb-2 transition ${
-              isSignUp ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-400"
+              isSignUp
+                ? "text-blue-600 border-b-2 border-blue-600"
+                : "text-gray-400"
             }`}
             onClick={() => setIsSignUp(true)}
           >
@@ -132,7 +142,9 @@ export default function AuthPage() {
                 onSubmit={handleEmailAuth}
               >
                 <div>
-                  <label className="block text-lg font-medium text-gray-700">Full Name</label>
+                  <label className="block text-lg font-medium text-gray-700">
+                    Full Name
+                  </label>
                   <input
                     type="text"
                     className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-400 text-lg"
@@ -142,7 +154,9 @@ export default function AuthPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-lg font-medium text-gray-700">Email</label>
+                  <label className="block text-lg font-medium text-gray-700">
+                    Email
+                  </label>
                   <input
                     type="email"
                     className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-400 text-lg"
@@ -153,7 +167,9 @@ export default function AuthPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-lg font-medium text-gray-700">Password</label>
+                  <label className="block text-lg font-medium text-gray-700">
+                    Password
+                  </label>
                   <input
                     type="password"
                     className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-400 text-lg"
@@ -184,7 +200,9 @@ export default function AuthPage() {
                 onSubmit={handleEmailAuth}
               >
                 <div>
-                  <label className="block text-lg font-medium text-gray-700">Email</label>
+                  <label className="block text-lg font-medium text-gray-700">
+                    Email
+                  </label>
                   <input
                     type="email"
                     className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-400 text-lg"
@@ -195,7 +213,9 @@ export default function AuthPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-lg font-medium text-gray-700">Password</label>
+                  <label className="block text-lg font-medium text-gray-700">
+                    Password
+                  </label>
                   <input
                     type="password"
                     className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-400 text-lg"
@@ -221,9 +241,16 @@ export default function AuthPage() {
 
         {/* Error Message */}
         {error && (
-          <Alert variant={error.includes("Check your email") ? "default" : "destructive"} className="mt-4">
+          <Alert
+            variant={
+              error.includes("Check your email") ? "default" : "destructive"
+            }
+            className="mt-4"
+          >
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>{error.includes("Check your email") ? "Info" : "Error"}</AlertTitle>
+            <AlertTitle>
+              {error.includes("Check your email") ? "Info" : "Error"}
+            </AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
@@ -247,6 +274,5 @@ export default function AuthPage() {
         </motion.div>
       </div>
     </div>
-  )
+  );
 }
-

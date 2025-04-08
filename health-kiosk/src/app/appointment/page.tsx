@@ -69,7 +69,7 @@ export default function PatientsAppointments() {
   }, [search]);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 flex flex-col items-center relative">
+    <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white p-4 flex flex-col items-center relative pt-20">
       {/* Time Display */}
       <TimeDisplay />
 
@@ -204,7 +204,7 @@ export default function PatientsAppointments() {
           onClick={() => router.push("/admindash")}
           className="flex items-center gap-2"
         >
-          <FaChevronLeft /> Back
+          <FaChevronLeft /> Bumalik
         </Button>
       </div>
     </div>

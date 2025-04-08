@@ -39,19 +39,46 @@ export default function HealthcareKiosk() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row items-center justify-center p-4 md:p-8">
-      {/* Left Side - Product Carousel */}
+      {/* Header */}
+      <header className="w-full bg-blue-500 p-2 shadow-lg fixed top-0 left-0 z-10">
+        <div className="flex justify-between items-center max-w-screen-xl mx-auto">
+          <h1 className="text-white text-2xl font-semibold">eKonsulTech</h1>
+          <nav>
+            <ul className="flex space-x-6 text-white text-lg">
+              <li>
+                <Button
+                  variant="link"
+                  className="text-white hover:text-blue-300"
+                  onClick={() => router.push("/about")}
+                >
+                  About
+                </Button>
+              </li>
+              <li>
+                <Button
+                  variant="link"
+                  className="text-white hover:text-blue-300"
+                  onClick={() => router.push("/contacts")}
+                >
+                  Contacts
+                </Button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </header>
+
+      {/* Main Content */}
       <div className="w-full md:w-1/2 flex flex-col items-center justify-center p-4">
         <Carousel className="w-full max-w-[700px] md:max-w-[800px] lg:max-w-[900px]">
           <CarouselContent>
             {products.map((product) => (
               <CarouselItem key={product.id} className="flex justify-center">
                 <Card className="w-full h-[600px] p-10 rounded-xl shadow-xl flex flex-col items-center justify-start bg-white hover:bg-blue-50 transition-all duration-300">
-                  {/* Title as Card Header */}
                   <h3 className="text-2xl md:text-3xl font-semibold mb-4">
                     {product.title}
                   </h3>
 
-                  {/* Larger Image */}
                   <Image
                     src={product.image}
                     alt={product.title}
@@ -60,7 +87,6 @@ export default function HealthcareKiosk() {
                     className="w-full h-[350px] object-cover rounded-none"
                   />
 
-                  {/* Description Below Image */}
                   <p className="text-center mt-4 text-gray-600 text-sm md:text-base">
                     {product.description}
                   </p>
@@ -69,7 +95,6 @@ export default function HealthcareKiosk() {
             ))}
           </CarouselContent>
 
-          {/* Responsive Navigation Buttons */}
           <CarouselPrevious className="absolute left-2 top-1/2 transform -translate-y-1/2 scale-90 md:scale-100" />
           <CarouselNext className="absolute right-2 top-1/2 transform -translate-y-1/2 scale-90 md:scale-100" />
         </Carousel>
@@ -93,7 +118,6 @@ export default function HealthcareKiosk() {
           Get Started
         </Button>
 
-        {/* Why Choose Us? */}
         <div className="mt-6 md:mt-8 p-4 md:p-6 rounded-xl w-full max-w-[500px] md:max-w-[700px] bg-blue-50">
           <h3 className="text-lg md:text-xl font-semibold mb-2 md:mb-4">
             Why Choose Us?

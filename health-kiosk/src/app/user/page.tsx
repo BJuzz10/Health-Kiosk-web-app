@@ -1,35 +1,35 @@
-"use client"
+"use client";
 
-import { useState, useEffect, type ChangeEvent, type FormEvent } from "react"
-import { FaChevronLeft, FaChevronRight, FaSave } from "react-icons/fa"
-import { useRouter } from "next/navigation"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, CheckCircle } from "lucide-react"
-import { savePatientData, getPatientData } from "@/lib/patient-data"
-import { getCurrentUser } from "@/lib/supabase-auth"
+import { useState, useEffect, type ChangeEvent, type FormEvent } from "react";
+import { FaChevronLeft, FaChevronRight, FaSave } from "react-icons/fa";
+import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, CheckCircle } from "lucide-react";
+import { savePatientData, getPatientData } from "@/lib/patient-data";
+import { getCurrentUser } from "@/lib/supabase-auth";
 
 interface FormData {
-  fullName: string
-  age: string
-  sex: string
-  birthday: string
-  address: string
-  contactNumber: string
-  height: string
-  weight: string
-  symptoms: string
-  systolic: string
-  diastolic: string
-  oxygenSaturation: string
-  temperature: string
+  fullName: string;
+  age: string;
+  sex: string;
+  birthday: string;
+  address: string;
+  contactNumber: string;
+  height: string;
+  weight: string;
+  symptoms: string;
+  systolic: string;
+  diastolic: string;
+  oxygenSaturation: string;
+  temperature: string;
 }
 
 export default function PatientInformationKiosk() {
-  const router = useRouter()
+  const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
     fullName: "",
     age: "",
@@ -44,24 +44,24 @@ export default function PatientInformationKiosk() {
     diastolic: "",
     oxygenSaturation: "",
     temperature: "",
-  })
+  });
 
   // Add alert state variables after the formData state
-  const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [time, setTime] = useState(new Date())
-  const [alertMessage, setAlertMessage] = useState<string | null>(null)
-  const [alertType, setAlertType] = useState<"success" | "error" | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [time, setTime] = useState(new Date());
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [alertType, setAlertType] = useState<"success" | "error" | null>(null);
 
   // Get current user and their data
   useEffect(() => {
     const fetchUserAndData = async () => {
-      const user = await getCurrentUser()
+      const user = await getCurrentUser();
       if (user?.email) {
-        setUserEmail(user.email)
+        setUserEmail(user.email);
 
         // Fetch existing patient data
-        const patientData = await getPatientData(user.email)
+        const patientData = await getPatientData(user.email);
         if (patientData) {
           setFormData({
             fullName: patientData.name || "",
@@ -77,37 +77,39 @@ export default function PatientInformationKiosk() {
             diastolic: "",
             oxygenSaturation: "",
             temperature: "",
-          })
+          });
         }
       }
-    }
+    };
 
-    fetchUserAndData()
-  }, [])
+    fetchUserAndData();
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setTime(new Date())
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [])
+      setTime(new Date());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   // Replace the handleSave function with this updated version
   const handleSave = async (e: FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!userEmail) {
-      setAlertType("error")
-      setAlertMessage("User not authenticated. Please sign in again.")
-      return
+      setAlertType("error");
+      setAlertMessage("User not authenticated. Please sign in again.");
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
       // Save patient data to database
@@ -121,33 +123,37 @@ export default function PatientInformationKiosk() {
         contact: formData.contactNumber,
         height: formData.height ? Number.parseFloat(formData.height) : null,
         weight: formData.weight ? Number.parseFloat(formData.weight) : null,
-      })
+      });
 
       if (success) {
-        setAlertType("success")
-        setAlertMessage("Patient information saved successfully!")
+        setAlertType("success");
+        setAlertMessage("Patient information saved successfully!");
 
         // Redirect to deeplink page after a short delay
         setTimeout(() => {
-          router.push("/deeplink")
-        }, 1500)
+          router.push("/deeplink");
+        }, 1500);
       } else {
-        setAlertType("error")
-        setAlertMessage("Failed to save patient information. Please try again.")
+        setAlertType("error");
+        setAlertMessage(
+          "Failed to save patient information. Please try again."
+        );
       }
     } catch (error) {
-      console.error("Error saving patient data:", error)
-      setAlertType("error")
-      setAlertMessage("An unexpected error occurred. Please try again.")
+      console.error("Error saving patient data:", error);
+      setAlertType("error");
+      setAlertMessage("An unexpected error occurred. Please try again.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 flex flex-col items-center relative">
       {/* Time Display */}
-      <div className="absolute top-4 right-6 text-gray-700 text-lg font-semibold">{time.toLocaleTimeString()}</div>
+      <div className="absolute top-4 right-6 text-gray-700 text-lg font-semibold">
+        {time.toLocaleTimeString()}
+      </div>
 
       {/* Title */}
       <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-800 mb-4 text-center">
@@ -156,8 +162,15 @@ export default function PatientInformationKiosk() {
 
       {/* Alert Message */}
       {alertMessage && (
-        <Alert variant={alertType === "error" ? "destructive" : "default"} className="mb-4 max-w-5xl w-full">
-          {alertType === "error" ? <AlertCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+        <Alert
+          variant={alertType === "error" ? "destructive" : "default"}
+          className="mb-4 max-w-5xl w-full"
+        >
+          {alertType === "error" ? (
+            <AlertCircle className="h-4 w-4" />
+          ) : (
+            <CheckCircle className="h-4 w-4" />
+          )}
           <AlertTitle>{alertType === "error" ? "Error" : "Success"}</AlertTitle>
           <AlertDescription>{alertMessage}</AlertDescription>
         </Alert>
@@ -175,23 +188,54 @@ export default function PatientInformationKiosk() {
           </h2>
           <div>
             <Label htmlFor="fullName">Pangalan</Label>
-            <Input id="fullName" name="fullName" value={formData.fullName} onChange={handleChange} required />
+            <Input
+              id="fullName"
+              name="fullName"
+              value={formData.fullName}
+              onChange={handleChange}
+              required
+            />
           </div>
           <div>
             <Label htmlFor="age">Edad</Label>
-            <Input id="age" type="number" name="age" value={formData.age} onChange={handleChange} required />
+            <Input
+              id="age"
+              type="number"
+              name="age"
+              value={formData.age}
+              onChange={handleChange}
+              required
+            />
           </div>
           <div>
             <Label htmlFor="sex">Kasarian</Label>
-            <Input id="sex" name="sex" value={formData.sex} onChange={handleChange} required />
+            <Input
+              id="sex"
+              name="sex"
+              value={formData.sex}
+              onChange={handleChange}
+              required
+            />
           </div>
           <div>
             <Label htmlFor="birthday">Petsa ng Kapanganakan</Label>
-            <Input id="birthday" type="date" name="birthday" value={formData.birthday} onChange={handleChange} />
+            <Input
+              id="birthday"
+              type="date"
+              name="birthday"
+              value={formData.birthday}
+              onChange={handleChange}
+            />
           </div>
           <div className="col-span-1 md:col-span-2">
             <Label htmlFor="address">Address</Label>
-            <Textarea id="address" name="address" value={formData.address} onChange={handleChange} required />
+            <Textarea
+              id="address"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              required
+            />
           </div>
           <div>
             <Label htmlFor="contactNumber">Numero ng Telepono</Label>
@@ -205,17 +249,33 @@ export default function PatientInformationKiosk() {
           </div>
           <div>
             <Label htmlFor="height">Taas (cm)</Label>
-            <Input id="height" type="number" name="height" value={formData.height} onChange={handleChange} required />
+            <Input
+              id="height"
+              type="number"
+              name="height"
+              value={formData.height}
+              onChange={handleChange}
+              required
+            />
           </div>
           <div>
             <Label htmlFor="weight">Timbang (kg)</Label>
-            <Input id="weight" type="number" name="weight" value={formData.weight} onChange={handleChange} required />
+            <Input
+              id="weight"
+              type="number"
+              name="weight"
+              value={formData.weight}
+              onChange={handleChange}
+              required
+            />
           </div>
         </div>
 
         {/* Right Section: Medical Information */}
         <div className="flex flex-col justify-between">
-          <h2 className="text-lg font-semibold text-gray-700 mb-2 text-center md:text-left">Medikal na Impormasyon</h2>
+          <h2 className="text-lg font-semibold text-gray-700 mb-2 text-center md:text-left">
+            Medikal na Impormasyon
+          </h2>
           <div>
             <h3 className="text-md font-semibold text-gray-700 mb-2">
               Ano ang iyong karamdamang nais mong ipakonsulta?
@@ -250,7 +310,9 @@ export default function PatientInformationKiosk() {
               </div>
             </div>
             <div>
-              <Label htmlFor="oxygenSaturation">Oxygen Saturation (% SpO2)</Label>
+              <Label htmlFor="oxygenSaturation">
+                Oxygen Saturation (% SpO2)
+              </Label>
               <Input
                 id="oxygenSaturation"
                 type="number"
@@ -283,7 +345,12 @@ export default function PatientInformationKiosk() {
             <FaChevronLeft /> Bumalik
           </Button>
           <div className="flex gap-2">
-            <Button type="submit" variant="outline" className="flex items-center gap-2" disabled={isLoading}>
+            <Button
+              type="submit"
+              variant="outline"
+              className="flex items-center gap-2"
+              disabled={isLoading}
+            >
               <FaSave /> {isLoading ? "Saving..." : "Save"}
             </Button>
             <Button
@@ -298,5 +365,5 @@ export default function PatientInformationKiosk() {
         </div>
       </form>
     </div>
-  )
+  );
 }

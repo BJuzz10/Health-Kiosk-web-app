@@ -20,6 +20,7 @@ interface PatientData {
   weight: string;
   systolic: string;
   diastolic: string;
+  pulseRate: string;
   oxygenSaturation: string;
   temperature: string;
   symptoms: string;
@@ -40,12 +41,14 @@ export default function PatientInformationKiosk() {
     weight: "",
     systolic: "",
     diastolic: "",
+    pulseRate: "",
     oxygenSaturation: "",
     temperature: "",
     symptoms: "",
     doctorNote: "",
   });
 
+  const [searchQuery, setSearchQuery] = useState("");
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -67,156 +70,190 @@ export default function PatientInformationKiosk() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 flex flex-col items-center relative">
-      {/* Time Display */}
+    <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white p-4 flex flex-col items-center justify-center relative">
+      {/* Clock */}
       <div className="absolute top-4 right-6 text-gray-700 text-lg font-semibold">
         {time.toLocaleTimeString()}
       </div>
 
-      {/* Title */}
-      <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-800 mb-4 text-center">
+      {/* Page Title */}
+      <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
         Patient Information System
       </h1>
 
-      {/* Form Container */}
-      <div className="w-full max-w-5xl bg-white rounded-xl shadow-lg p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Left Section: Personal Information */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <h2 className="col-span-1 md:col-span-2 text-lg font-semibold text-gray-700 mb-2 text-center md:text-left">
+      {/* Search Input */}
+      <div className="w-full max-w-5xl mb-4">
+        <Input
+          type="text"
+          placeholder="Search patient name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
+      {/* Main Form Container */}
+      <div className="w-full max-w-5xl bg-white rounded-xl shadow-lg p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Left Side - Personal Info */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-gray-700 mb-2">
             Personal Information
           </h2>
-          <div>
-            <Label>Name</Label>
-            <Input
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-            <Label>Status</Label>
-            <Input
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-            <Label>Age</Label>
-            <Input
-              type="number"
-              name="age"
-              value={formData.age}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-            <Label>Sex</Label>
-            <Input name="sex" value={formData.sex} onChange={handleChange} />
-          </div>
-          <div>
-            <Label>Birthday</Label>
-            <Input
-              type="date"
-              name="birthday"
-              value={formData.birthday}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-            <Label>Address</Label>
-            <Textarea
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-            <Label>Contact Number</Label>
-            <Input
-              name="contactNumber"
-              value={formData.contactNumber}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-            <Label>Height (cm)</Label>
-            <Input
-              type="number"
-              name="height"
-              value={formData.height}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-            <Label>Weight (kg)</Label>
-            <Input
-              type="number"
-              name="weight"
-              value={formData.weight}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-            <Label>Blood Pressure (mmHg)</Label>
-            <div className="flex gap-2">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label>Name</Label>
               <Input
-                name="systolic"
-                type="number"
-                value={formData.systolic}
+                name="fullName"
+                value={formData.fullName}
                 onChange={handleChange}
-                placeholder="Systolic"
               />
+            </div>
+            <div>
+              <Label>Status</Label>
               <Input
-                name="diastolic"
-                type="number"
-                value={formData.diastolic}
+                name="status"
+                value={formData.status}
                 onChange={handleChange}
-                placeholder="Diastolic"
+              />
+            </div>
+            <div>
+              <Label>Age</Label>
+              <Input
+                type="number"
+                name="age"
+                value={formData.age}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label>Sex</Label>
+              <Input name="sex" value={formData.sex} onChange={handleChange} />
+            </div>
+            <div>
+              <Label>Birthday</Label>
+              <Input
+                type="date"
+                name="birthday"
+                value={formData.birthday}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <Label>Address</Label>
+              <Textarea
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                placeholder="Enter full address"
+                className="resize-none h-20"
+              />
+            </div>
+            <div>
+              <Label>Contact Number</Label>
+              <Input
+                name="contactNumber"
+                value={formData.contactNumber}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label>Height (cm)</Label>
+              <Input
+                type="number"
+                name="height"
+                value={formData.height}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label>Weight (kg)</Label>
+              <Input
+                type="number"
+                name="weight"
+                value={formData.weight}
+                onChange={handleChange}
               />
             </div>
           </div>
-          <div>
-            <Label>Oxygen Saturation (% SpO2)</Label>
-            <Input
-              type="number"
-              name="oxygenSaturation"
-              value={formData.oxygenSaturation}
-              onChange={handleChange}
-            />
-          </div>
-          <div>
-            <Label>Temperature (°C)</Label>
-            <Input
-              type="number"
-              name="temperature"
-              value={formData.temperature}
-              onChange={handleChange}
-            />
-          </div>
         </div>
 
-        {/* Right Section: Medical Information & Doctor's Note */}
-        <div className="flex flex-col justify-between">
-          <h2 className="text-lg font-semibold text-gray-700 mb-2 text-center md:text-left">
-            Patient&apos;s Complaint
+        {/* Right Side - Medical Info */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-gray-700 mb-2">
+            Vitals & Medical Info
           </h2>
-          <Textarea
-            name="symptoms"
-            value={formData.symptoms}
-            onChange={handleChange}
-            placeholder="Enter the patient's symptoms here..."
-          />
 
-          <h2 className="text-lg font-semibold text-gray-700 mt-4 mb-2 text-center md:text-left">
-            Doctor&apos;s Note (Prescription)
-          </h2>
-          <Textarea
-            name="doctorNote"
-            value={formData.doctorNote}
-            onChange={handleChange}
-            placeholder="Write the prescription or doctor's note here..."
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label>Blood Pressure (mmHg)</Label>
+              <div className="flex gap-2">
+                <Input
+                  name="systolic"
+                  type="number"
+                  value={formData.systolic}
+                  onChange={handleChange}
+                  placeholder="Systolic"
+                />
+                <Input
+                  name="diastolic"
+                  type="number"
+                  value={formData.diastolic}
+                  onChange={handleChange}
+                  placeholder="Diastolic"
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Pulse Rate (BPM)</Label>
+              <Input
+                type="number"
+                name="pulseRate"
+                value={formData.pulseRate}
+                onChange={handleChange}
+                placeholder="e.g., 72"
+              />
+            </div>
+            <div>
+              <Label>Oxygen Saturation (%)</Label>
+              <Input
+                type="number"
+                name="oxygenSaturation"
+                value={formData.oxygenSaturation}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label>Temperature (°C)</Label>
+              <Input
+                type="number"
+                name="temperature"
+                value={formData.temperature}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label>Patient&apos;s Complaint</Label>
+            <Textarea
+              name="symptoms"
+              value={formData.symptoms}
+              onChange={handleChange}
+              placeholder="Enter the patient's symptoms here..."
+              className="resize-none h-24"
+            />
+          </div>
+
+          <div>
+            <Label>Doctor&apos;s Note</Label>
+            <Textarea
+              name="doctorNote"
+              value={formData.doctorNote}
+              onChange={handleChange}
+              placeholder="Write the prescription or notes..."
+              className="resize-none h-24"
+            />
+          </div>
         </div>
       </div>
 
