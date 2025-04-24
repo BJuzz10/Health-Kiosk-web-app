@@ -1,8 +1,11 @@
-import { createClient } from "@/utils/supabase/client";
+import { createBrowserClient } from "@supabase/ssr";
 import { hasCompletePatientData } from "./patient-data";
 
-// Create a Supabase client for browser-side authentication
-const supabase = createClient();
+// Create a Supabase client for browser-side operations
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 // Function to sign in with Google
 export async function signInWithGoogle(source?: string) {
@@ -167,4 +170,77 @@ export async function getRedirectPathAfterAuth() {
   const hasData = await hasCompletePatientData(user.email!);
 
   return hasData ? "/dashboard" : "/user"; // Go to dashboard if data exists, otherwise to user profile
+}
+
+export async function handleSignUp(email: string, password: string) {
+  try {
+    // Create auth user first
+    const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (signUpError) throw signUpError;
+    if (!authData.user) throw new Error("No user data returned after signup");
+
+    // Create patient data with auth user's UID
+    const { error: patientError } = await supabase.from("patient_data").insert({
+      user_id: authData.user.id, // This is the key part - linking auth UID to patient_data
+      email: email,
+    });
+
+    if (patientError) {
+      console.error("Error creating patient data:", patientError);
+      await supabase.auth.signOut();
+      throw patientError;
+    }
+
+    return authData;
+  } catch (error) {
+    console.error("Error in handleSignUp:", error);
+    throw error;
+  }
+}
+
+export async function handleSignIn(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) throw error;
+  return data;
+}
+
+export async function handleSignOut() {
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+}
+
+export async function getPatientDataByUserId(userId: string) {
+  const { data, error } = await supabase
+    .from("patient_data")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+
+  if (error) return null;
+  return data;
+}
+
+// Function to get current user and their patient data
+export async function getCurrentUserAndPatientData() {
+  try {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) return { user: null, patientData: null };
+
+    const patientData = await getPatientDataByUserId(user.id);
+    return { user, patientData };
+  } catch (error) {
+    console.error("Error in getCurrentUserAndPatientData:", error);
+    return { user: null, patientData: null };
+  }
 }

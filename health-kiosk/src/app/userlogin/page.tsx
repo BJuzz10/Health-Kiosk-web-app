@@ -68,12 +68,9 @@ export default function AuthPage() {
           await savePatientData({
             email: email,
             name: fullName,
-            age: null,
             sex: null,
             address: null,
             contact: null,
-            height: null,
-            weight: null,
           });
         }
 

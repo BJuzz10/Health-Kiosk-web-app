@@ -9,12 +9,16 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle } from "lucide-react";
-import { savePatientData, getPatientData } from "@/lib/patient-data";
+import { useLanguage } from "@/context/LanguageContext";
+import {
+  savePatientData,
+  getPatientData,
+  calculateAge,
+} from "@/lib/patient-data";
 import { getCurrentUser } from "@/lib/supabase-auth";
 
 interface PersonalFormData {
   fullName: string;
-  age: string;
   sex: string;
   birthday: string;
   address: string;
@@ -23,9 +27,10 @@ interface PersonalFormData {
 
 export default function PersonalInformation() {
   const router = useRouter();
+  const { t, language, setLanguage } = useLanguage();
+
   const [formData, setFormData] = useState<PersonalFormData>({
     fullName: "",
-    age: "",
     sex: "",
     birthday: "",
     address: "",
@@ -38,6 +43,7 @@ export default function PersonalInformation() {
   const [time, setTime] = useState(new Date());
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [alertType, setAlertType] = useState<"success" | "error" | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   // Get current user and their data
   useEffect(() => {
@@ -51,9 +57,10 @@ export default function PersonalInformation() {
         if (patientData) {
           setFormData({
             fullName: patientData.name || "",
-            age: patientData.age?.toString() || "",
             sex: patientData.sex || "",
-            birthday: "", // Birthday might need conversion from DB format
+            birthday: patientData.birthday
+              ? new Date(patientData.birthday).toISOString().split("T")[0]
+              : "",
             address: patientData.address || "",
             contactNumber: patientData.contact || "",
           });
@@ -65,10 +72,12 @@ export default function PersonalInformation() {
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTime(new Date());
-    }, 1000);
+    const interval = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    setMounted(true);
   }, []);
 
   const handleChange = (
@@ -95,7 +104,6 @@ export default function PersonalInformation() {
       const success = await savePatientData({
         email: userEmail,
         name: formData.fullName,
-        age: formData.age ? Number.parseInt(formData.age) : null,
         sex: formData.sex,
         birthday: formData.birthday ? new Date(formData.birthday) : null,
         address: formData.address,
@@ -108,7 +116,7 @@ export default function PersonalInformation() {
 
         // Redirect to deeplink page after a short delay
         setTimeout(() => {
-          router.push("/deeplink");
+          router.push("/dashboard");
         }, 1500);
       } else {
         setAlertType("error");
@@ -125,13 +133,26 @@ export default function PersonalInformation() {
     }
   };
 
+  const toggleLanguage = () => {
+    setLanguage(language === "en" ? "tl" : "en");
+  };
+
+  if (!mounted) return null;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white p-4 flex flex-col items-center justify-center relative">
       <div className="absolute top-4 right-6 text-gray-700 text-lg font-semibold">
         {time.toLocaleTimeString()}
       </div>
-      <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-800 mb-4 text-center">
-        Patient Information System
+
+      <div className="absolute top-4 left-6">
+        <Button variant="outline" onClick={toggleLanguage}>
+          {t("language.toggle")}
+        </Button>
+      </div>
+
+      <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-800 mb-4 text-center mt-16">
+        {t("user.title")}
       </h1>
 
       {/* Alert Message */}
@@ -157,11 +178,11 @@ export default function PersonalInformation() {
       >
         <div>
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
-            Personal na Impormasyon
+            {t("user.personal.info")}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label htmlFor="fullName">Pangalan</Label>
+              <Label htmlFor="fullName">{t("user.name")}</Label>
               <Input
                 id="fullName"
                 name="fullName"
@@ -171,18 +192,7 @@ export default function PersonalInformation() {
               />
             </div>
             <div>
-              <Label htmlFor="age">Edad</Label>
-              <Input
-                id="age"
-                type="number"
-                name="age"
-                value={formData.age}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="sex">Kasarian</Label>
+              <Label htmlFor="sex">{t("user.sex")}</Label>
               <Input
                 id="sex"
                 name="sex"
@@ -192,7 +202,7 @@ export default function PersonalInformation() {
               />
             </div>
             <div>
-              <Label htmlFor="birthday">Petsa ng Kapanganakan</Label>
+              <Label htmlFor="birthday">{t("user.birthday")}</Label>
               <Input
                 id="birthday"
                 type="date"
@@ -200,6 +210,12 @@ export default function PersonalInformation() {
                 value={formData.birthday}
                 onChange={handleChange}
               />
+              {formData.birthday && (
+                <div className="text-sm text-muted-foreground mt-1">
+                  {t("user.age")}: {calculateAge(new Date(formData.birthday))}{" "}
+                  years old
+                </div>
+              )}
             </div>
             <div className="md:col-span-2">
               <Label htmlFor="address">Address</Label>
@@ -212,7 +228,7 @@ export default function PersonalInformation() {
               />
             </div>
             <div>
-              <Label htmlFor="contactNumber">Numero ng Telepono</Label>
+              <Label htmlFor="contactNumber">{t("user.contact")}</Label>
               <Input
                 id="contactNumber"
                 name="contactNumber"

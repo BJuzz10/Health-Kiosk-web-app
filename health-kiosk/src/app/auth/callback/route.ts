@@ -62,12 +62,10 @@ export async function GET(request: Request) {
             await savePatientData({
               email: user.email!,
               name: user.user_metadata?.full_name || null,
-              age: null,
               sex: null,
               address: null,
               contact: null,
-              height: null,
-              weight: null,
+              birthday: null,
             });
 
             // Redirect to user info page to complete profile

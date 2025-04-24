@@ -112,7 +112,7 @@ export default function HealthcareKiosk() {
           with professionals all in one place.
         </p>
         <Button
-          onClick={() => router.push("/form")}
+          onClick={() => router.push("/language-select")}
           className="mt-4 md:mt-6 px-6 md:px-8 py-3 md:py-4 bg-blue-500 text-white rounded-full text-base md:text-lg font-semibold hover:bg-blue-600 transition-all duration-300 shadow-lg"
         >
           Get Started
@@ -125,15 +125,15 @@ export default function HealthcareKiosk() {
           <ul className="space-y-2 md:space-y-3 text-sm md:text-base">
             <li className="flex items-center space-x-2">
               <span className="text-blue-500">✓</span>
-              <span>24/7 Healthcare Support</span>
+              <span>Timely Healthcare Assistance</span>
             </li>
             <li className="flex items-center space-x-2">
               <span className="text-blue-500">✓</span>
-              <span>Secure Patient Data</span>
+              <span>Protected & Confidential Patient Records</span>
             </li>
             <li className="flex items-center space-x-2">
               <span className="text-blue-500">✓</span>
-              <span>Smart Health Monitoring</span>
+              <span>Intelligent Health Monitoring Solutions</span>
             </li>
           </ul>
         </div>
