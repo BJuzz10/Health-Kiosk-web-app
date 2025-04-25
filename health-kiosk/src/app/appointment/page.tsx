@@ -204,7 +204,7 @@ export default function PatientsAppointments() {
           onClick={() => router.push("/admindash")}
           className="flex items-center gap-2"
         >
-          <FaChevronLeft /> Bumalik
+          <FaChevronLeft /> Back
         </Button>
       </div>
     </div>

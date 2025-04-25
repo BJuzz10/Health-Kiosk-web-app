@@ -1,21 +1,34 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { IoArrowBack } from "react-icons/io5";
+import type React from "react";
+
+import { useState, useEffect, useRef } from "react";
+import { FaChevronLeft } from "react-icons/fa";
 import {
   FaHospital,
   FaFileDownload,
   FaCamera,
   FaHistory,
+  FaUpload,
 } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function KioskDashboard() {
   const router = useRouter();
   const [isEnglish, setIsEnglish] = useState(false);
   const [currentTime, setCurrentTime] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState<string | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Update time every second, but only on the client
   useEffect(() => {
@@ -58,6 +71,31 @@ export default function KioskDashboard() {
     showPrescriptionHistory: isEnglish
       ? "Show History of Prescriptions"
       : "Ipakita ang Kasaysayan ng mga Reseta",
+    uploadModalTitle: isEnglish
+      ? "Upload Prescription"
+      : "Mag-upload ng Reseta",
+    selectFile: isEnglish ? "Select File" : "Pumili ng File",
+    upload: isEnglish ? "Upload" : "I-upload",
+    takePhoto: isEnglish ? "Take Photo" : "Kumuha ng Larawan",
+    fileSelected: isEnglish ? "File Selected" : "Napiling File",
+    noFileSelected: isEnglish ? "No file selected" : "Walang napiling file",
+    Backbutton: isEnglish ? "Back" : "Bumalik",
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleUpload = () => {
+    // Here you would implement the actual file upload logic
+    if (selectedFile) {
+      console.log("Uploading file:", selectedFile.name);
+      // After successful upload, close the modal and reset the selected file
+      setIsUploadModalOpen(false);
+      setSelectedFile(null);
+    }
   };
 
   return (
@@ -67,11 +105,11 @@ export default function KioskDashboard() {
         {/* Header with Time & Language Toggle */}
         <div className="flex flex-col sm:flex-row items-center justify-between w-full mb-4">
           <Button
-            variant="ghost"
-            size="icon"
+            variant="outline"
             onClick={() => router.push("/patientinfo")}
+            className="flex items-center gap-2"
           >
-            <IoArrowBack size={28} className="text-gray-700" />
+            <FaChevronLeft /> {translations.Backbutton}
           </Button>
 
           {/* Time & Date Display (Rendered only after mount) */}
@@ -109,7 +147,7 @@ export default function KioskDashboard() {
             {
               icon: <FaCamera className="text-2xl text-indigo-600" />,
               text: translations.uploadPrescription,
-              onClick: () => router.push("/upload-prescription"),
+              onClick: () => setIsUploadModalOpen(true),
             },
             {
               icon: <FaHistory className="text-2xl text-yellow-600" />,
@@ -135,6 +173,67 @@ export default function KioskDashboard() {
           eKonsulTech
         </div>
       </div>
+
+      {/* Upload Prescription Modal */}
+      <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">
+              {translations.uploadModalTitle}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center space-y-6 py-4">
+            <div className="w-full border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+                id="prescription-file"
+              />
+
+              {selectedFile ? (
+                <div className="flex flex-col items-center gap-2">
+                  <FaUpload className="text-4xl text-green-500 mb-2" />
+                  <p className="font-medium">{translations.fileSelected}:</p>
+                  <p className="text-sm text-gray-600 break-all">
+                    {selectedFile.name}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <FaUpload className="text-4xl text-gray-400 mb-2" />
+                  <p className="text-gray-500">{translations.noFileSelected}</p>
+                </div>
+              )}
+
+              <div className="mt-4 flex flex-col sm:flex-row gap-3 justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2"
+                >
+                  <FaUpload className="text-sm" />
+                  {translations.selectFile}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              onClick={handleUpload}
+              disabled={!selectedFile}
+              className="flex items-center gap-2"
+            >
+              <FaUpload className="text-sm" />
+              {translations.upload}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -11,6 +11,8 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 
+// Removed the unused RedirectToLanguageSelect function
+
 const products = [
   {
     id: 1,

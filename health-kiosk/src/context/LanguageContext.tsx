@@ -107,6 +107,7 @@ const translations: Record<string, Record<string, string>> = {
     "medinfo.pulse": "Pulse Rate (bpm)",
     "medinfo.height": "Height (cm)",
     "medinfo.weight": "Weight (kg)",
+    "medinfo.placeholder": "Enter your answer here...",
 
     // User Profile
     "user.title": "Patient Information System",
@@ -159,6 +160,7 @@ const translations: Record<string, Record<string, string>> = {
     "medinfo.pulse": "Pulse Rate (bpm)",
     "medinfo.height": "Taas (cm)",
     "medinfo.weight": "Timbang (kg)",
+    "medinfo.placeholder": "Ilagay ang iyong sagot dito...",
 
     // User Profile
     "user.title": "Sistema ng Impormasyon ng Pasyente",

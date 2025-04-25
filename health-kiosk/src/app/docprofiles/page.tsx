@@ -173,7 +173,7 @@ export default function DoctorProfile() {
             onClick={() => router.push("/admindash")}
             className="flex items-center gap-2"
           >
-            <ChevronLeft size={16} /> Bumalik
+            <ChevronLeft size={16} /> Back
           </Button>
 
           <h1 className="text-3xl font-bold text-gray-800 text-center flex-1">

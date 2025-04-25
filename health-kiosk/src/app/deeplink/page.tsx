@@ -1,18 +1,13 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+
+import BPInstructionManual from "@/components/instruction-manuals/bp-instruction";
+import OxySatInstructionManual from "@/components/instruction-manuals/oxysat-instruction";
+import TemperatureInstructionManual from "@/components/instruction-manuals/temperature-instruction";
 
 export default function HealthAppsPage() {
   const [attemptingDeepLink, setAttemptingDeepLink] = useState(false);
@@ -90,9 +85,9 @@ export default function HealthAppsPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6 relative">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-100 to-white p-6 relative">
       {/* Time Display */}
-      <div className="absolute top-4 right-6 text-gray-700 text-lg font-semibold">
+      <div className="absolute top-4 right-6 text-gray-700 text-lg font-semibold z-10">
         {time.toLocaleTimeString()}
       </div>
 
@@ -104,52 +99,6 @@ export default function HealthAppsPage() {
       >
         Bumalik
       </Button>
-
-      {/* Instruction Modal */}
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button className="absolute top-15 right-65 z-10" variant="outline">
-            Open Instructions
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Instruction Manual</DialogTitle>
-            <DialogDescription>
-              Welcome to the Health Monitoring Apps page! Before you proceed,
-              please take a moment to review the following instructions for
-              using the apps.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <h3 className="font-semibold">1. Blood Pressure - Omron Connect</h3>
-            <p>
-              This app allows you to monitor your blood pressure using the Omron
-              Connect device. Follow the instructions in the app for accurate
-              readings.
-            </p>
-            <h3 className="font-semibold">2. Oxygen Saturation - HealthTree</h3>
-            <p>
-              The HealthTree app helps you track your oxygen saturation levels.
-              Ensure the app is installed and connected to your device for
-              monitoring.
-            </p>
-            <h3 className="font-semibold">
-              3. Temperature - Beurer Health Manager
-            </h3>
-            <p>
-              The Beurer app allows you to track your body temperature. Pair
-              your Beurer device with the app to get the most accurate
-              temperature readings.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button onClick={() => alert("Proceeding with instructions")}>
-              I understand, proceed
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <h1 className="text-4xl font-extrabold text-center mb-8">
         Health Monitoring Apps
@@ -166,12 +115,15 @@ export default function HealthAppsPage() {
             <p className="text-gray-600 mb-6 text-center">
               Monitor your BP using the Omron Connect app.
             </p>
-            <Button
-              onClick={openOmronApp}
-              className="w-full py-3 text-lg bg-blue-600 text-white hover:bg-blue-700 mt-6"
-            >
-              BP - Omron Connect app
-            </Button>
+            <div className="flex flex-col w-full gap-3">
+              <Button
+                onClick={openOmronApp}
+                className="w-full py-3 text-lg bg-blue-600 text-white hover:bg-blue-700 mt-6"
+              >
+                BP - Omron Connect app
+              </Button>
+              <BPInstructionManual />
+            </div>
           </CardContent>
         </Card>
 
@@ -186,12 +138,15 @@ export default function HealthAppsPage() {
             <p className="text-gray-600 mb-6 text-center">
               Check your oxygen levels with the HealthTree app.
             </p>
-            <Button
-              className="w-full py-3 text-lg bg-green-600 text-white hover:bg-green-700 mt-6"
-              onClick={openHealthTreeApp}
-            >
-              OxySat - HealthTree app
-            </Button>
+            <div className="flex flex-col w-full gap-3">
+              <Button
+                className="w-full py-3 text-lg bg-green-600 text-white hover:bg-green-700 mt-6"
+                onClick={openHealthTreeApp}
+              >
+                OxySat - HealthTree app
+              </Button>
+              <OxySatInstructionManual />
+            </div>
           </CardContent>
         </Card>
 
@@ -206,12 +161,15 @@ export default function HealthAppsPage() {
             <p className="text-gray-600 mb-6 text-center">
               Track your temperature using the Beurer Health Manager Pro App.
             </p>
-            <Button
-              className="w-full py-3 text-lg bg-red-600 text-white hover:bg-red-700"
-              onClick={openBeurerApp}
-            >
-              Temperature - Beurer
-            </Button>
+            <div className="flex flex-col w-full gap-3">
+              <Button
+                className="w-full py-3 text-lg bg-red-600 text-white hover:bg-red-700"
+                onClick={openBeurerApp}
+              >
+                Temperature - Beurer
+              </Button>
+              <TemperatureInstructionManual />
+            </div>
           </CardContent>
         </Card>
       </div>

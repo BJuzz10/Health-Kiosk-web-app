@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, ChangeEvent } from "react";
+import { useState, useEffect, type ChangeEvent } from "react";
 import { FaChevronLeft, FaChevronRight, FaSave } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -48,7 +48,6 @@ export default function PatientInformationKiosk() {
     doctorNote: "",
   });
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -80,16 +79,6 @@ export default function PatientInformationKiosk() {
       <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
         Patient Information System
       </h1>
-
-      {/* Search Input */}
-      <div className="w-full max-w-5xl mb-4">
-        <Input
-          type="text"
-          placeholder="Search patient name..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
 
       {/* Main Form Container */}
       <div className="w-full max-w-5xl bg-white rounded-xl shadow-lg p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -138,16 +127,6 @@ export default function PatientInformationKiosk() {
                 onChange={handleChange}
               />
             </div>
-            <div className="md:col-span-2">
-              <Label>Address</Label>
-              <Textarea
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                placeholder="Enter full address"
-                className="resize-none h-20"
-              />
-            </div>
             <div>
               <Label>Contact Number</Label>
               <Input
@@ -156,22 +135,14 @@ export default function PatientInformationKiosk() {
                 onChange={handleChange}
               />
             </div>
-            <div>
-              <Label>Height (cm)</Label>
-              <Input
-                type="number"
-                name="height"
-                value={formData.height}
+            <div className="md:col-span-2">
+              <Label>Address</Label>
+              <Textarea
+                name="address"
+                value={formData.address}
                 onChange={handleChange}
-              />
-            </div>
-            <div>
-              <Label>Weight (kg)</Label>
-              <Input
-                type="number"
-                name="weight"
-                value={formData.weight}
-                onChange={handleChange}
+                placeholder="Enter full address"
+                className="resize-none h-20"
               />
             </div>
           </div>
@@ -231,6 +202,24 @@ export default function PatientInformationKiosk() {
                 onChange={handleChange}
               />
             </div>
+            <div>
+              <Label>Height (cm)</Label>
+              <Input
+                type="number"
+                name="height"
+                value={formData.height}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <Label>Weight (kg)</Label>
+              <Input
+                type="number"
+                name="weight"
+                value={formData.weight}
+                onChange={handleChange}
+              />
+            </div>
           </div>
 
           <div>
@@ -243,17 +232,17 @@ export default function PatientInformationKiosk() {
               className="resize-none h-24"
             />
           </div>
-
-          <div>
-            <Label>Doctor&apos;s Note</Label>
-            <Textarea
-              name="doctorNote"
-              value={formData.doctorNote}
-              onChange={handleChange}
-              placeholder="Write the prescription or notes..."
-              className="resize-none h-24"
-            />
-          </div>
+        </div>
+        {/* Doctor's Note - Full Width */}
+        <div className="col-span-1 md:col-span-2 mt-1">
+          <Label>Doctor&apos;s Note</Label>
+          <Textarea
+            name="doctorNote"
+            value={formData.doctorNote}
+            onChange={handleChange}
+            placeholder="Write the prescription or notes..."
+            className="resize-none h-40 w-full"
+          />
         </div>
       </div>
 

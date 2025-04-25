@@ -1,67 +1,8 @@
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient } from "../utils/supabase/client";
 import { hasCompletePatientData } from "./patient-data";
 
 // Create a Supabase client for browser-side operations
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-// Function to sign in with Google
-export async function signInWithGoogle(source?: string) {
-  try {
-    // Get the base URL from the environment or window location
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-
-    // Ensure we're using the direct callback URL with source parameter
-    let redirectUrl = `${baseUrl}/auth/callback`;
-
-    // Add source parameter if provided
-    if (source) {
-      redirectUrl += `?source=${source}`;
-    }
-
-    console.log(
-      "Redirect URL for Google auth:",
-      redirectUrl,
-      "Source:",
-      source
-    );
-
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: redirectUrl,
-        queryParams: source ? { source } : undefined, // Add source as a query param too for redundancy
-      },
-    });
-
-    if (error) {
-      console.error("Google sign-in error:", error);
-
-      // Check for specific provider not enabled error
-      if (
-        error.message?.includes("provider is not enabled") ||
-        error.message?.includes("Unsupported provider")
-      ) {
-        throw new Error(
-          "Google authentication is not configured. Please contact the administrator."
-        );
-      }
-
-      throw error;
-    }
-
-    // After successful Google sign-in, check if we need to create initial patient data
-    // This will be handled in the callback route since this redirects to Google
-
-    return data;
-  } catch (error) {
-    console.error("Google sign-in error:", error);
-    throw error;
-  }
-}
-
+const supabase = createClient();
 // Function to sign in with email and password
 export async function signInWithEmail(email: string, password: string) {
   try {

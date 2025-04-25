@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useContext } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -34,6 +35,38 @@ export default function LanguageSelect() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-100 to-white p-4">
+      <header className="w-full bg-blue-500 p-2 shadow-lg fixed top-0 left-0 z-10">
+        <div className="flex justify-between items-center max-w-screen-xl mx-auto">
+          <Link
+            href="/"
+            className="text-white text-2xl font-semibold hover:underline"
+          >
+            eKonsulTech
+          </Link>
+          <nav>
+            <ul className="flex space-x-6 text-white text-lg">
+              <li>
+                <Button
+                  variant="link"
+                  className="text-white hover:text-blue-300"
+                  onClick={() => router.push("/about")}
+                >
+                  About
+                </Button>
+              </li>
+              <li>
+                <Button
+                  variant="link"
+                  className="text-white hover:text-blue-300"
+                  onClick={() => router.push("/contacts")}
+                >
+                  Contacts
+                </Button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </header>
       <div className="w-full max-w-4xl text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
           Welcome to eKonsulTech

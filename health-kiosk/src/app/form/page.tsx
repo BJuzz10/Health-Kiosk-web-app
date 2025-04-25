@@ -1,5 +1,5 @@
 "use client";
-
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaUserAlt, FaUserCog } from "react-icons/fa";
@@ -42,8 +42,40 @@ export default function HealthKiosk() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-start pt-20 bg-gradient-to-br from-blue-50 to-teal-50 px-4">
+      <header className="w-full bg-blue-500 p-2 shadow-lg fixed top-0 left-0 z-10">
+        <div className="flex justify-between items-center max-w-screen-xl mx-auto">
+          <Link
+            href="/"
+            className="text-white text-2xl font-semibold hover:underline"
+          >
+            eKonsulTech
+          </Link>
+          <nav>
+            <ul className="flex space-x-6 text-white text-lg">
+              <li>
+                <Button
+                  variant="link"
+                  className="text-white hover:text-blue-300"
+                  onClick={() => router.push("/about")}
+                >
+                  About
+                </Button>
+              </li>
+              <li>
+                <Button
+                  variant="link"
+                  className="text-white hover:text-blue-300"
+                  onClick={() => router.push("/contacts")}
+                >
+                  Contacts
+                </Button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </header>
       {/* Language Toggle */}
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-20 right-8">
         <Button variant="outline" onClick={toggleLanguage}>
           {t("language.toggle")}
         </Button>

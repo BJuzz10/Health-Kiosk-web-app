@@ -215,14 +215,12 @@ export default function MedicalInformation() {
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             {t("medinfo.title")}
           </h2>
-          <Label className="block mb-2">
-            Ano ang iyong karamdamang nais mong ipakonsulta?
-          </Label>
+          <Label className="block mb-2">{t("medinfo.symptoms")}</Label>
           <Textarea
             name="symptoms"
             value={formData.symptoms}
             onChange={handleChange}
-            placeholder="Ilagay ang iyong sagot dito..."
+            placeholder={t("medinfo.placeholder")}
             className="w-full resize-none overflow-auto h-32"
           />
         </div>
