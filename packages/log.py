@@ -1,5 +1,6 @@
 from flask import Flask, Blueprint, request, jsonify, session, make_response
 from datetime import datetime
+from zoneinfo import ZoneInfo #builtin daw
 
 log = Blueprint('log', __name__)
 
@@ -12,10 +13,12 @@ def log_time():
     if not user_id:
         return jsonify({"error": "User ID required"}), 400
 
+    #Philippine Timezone
+    phil_time = datetime.now(ZoneInfo("Asia/Manila")).strftime("%Y-%m-%d %H:%M:%S")#nilagyan ko ng strftime
     #stores in session
     session['user_id'] = user_id #saves user id in session
 
-    session['login_time'] = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))#nilagyan ko ng strftime
+    session['login_time'] = str(phil_time)#nilagyan ko ng strftime
     session.permanent = True
     print("Session set:", session)
     user_logins[user_id] = session['login_time'] #stored login times of the user
