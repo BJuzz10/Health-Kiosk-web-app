@@ -44,6 +44,86 @@ export default function MedicalInformation() {
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch latest measurements when component mounts
+  useEffect(() => {
+    const fetchLatestMeasurements = async () => {
+      try {
+        const supabase = createClient();
+
+        // Get current user
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+          throw new Error("Authentication error");
+        }
+
+        // Get patient data
+        const { data: patientData, error: patientError } = await supabase
+          .from("patient_data")
+          .select("id")
+          .eq("email", user.email)
+          .single();
+
+        if (patientError || !patientData) {
+          throw new Error("Patient data not found");
+        }
+
+        // Get the latest measurements for each type by recorded_at
+        const { data: measurements, error: measurementsError } = await supabase
+          .from("vital_measurements")
+          .select("type, value")
+          .eq("patient_id", patientData.id)
+          .in("type", [
+            "height_cm",
+            "weight_kg",
+            "bp_systolic",
+            "bp_diastolic",
+            "temperature",
+          ])
+          .order("recorded_at", { ascending: false });
+
+        if (measurementsError) {
+          throw new Error("Failed to fetch measurements");
+        }
+
+        // Get latest non-null symptoms that are not from devices
+        const { data: latestCheckup } = await supabase
+          .from("checkups")
+          .select("reason")
+          .eq("patient_id", patientData.id)
+          .not("reason", "ilike", "%measurement from%device%")
+          .not("reason", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        // Get latest value for each type
+        const getLatestValue = (type: string) => {
+          const measurement = measurements?.find((m) => m.type === type);
+          return measurement?.value.toString() || "";
+        };
+
+        // Update form data with latest measurements and symptoms
+        setFormData((prev) => ({
+          ...prev,
+          height: getLatestValue("height_cm"),
+          weight: getLatestValue("weight_kg"),
+          systolic: getLatestValue("bp_systolic"),
+          diastolic: getLatestValue("bp_diastolic"),
+          temperature: getLatestValue("temperature"),
+          symptoms: latestCheckup?.reason || "",
+        }));
+      } catch (err) {
+        console.error("Error fetching latest measurements:", err);
+      }
+    };
+
+    fetchLatestMeasurements();
+  }, []);
+
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -112,6 +192,7 @@ export default function MedicalInformation() {
           value: Number(formData.height),
           unit: "cm",
           recorded_at: now,
+          patient_id: patientData.id,
         });
       }
 
@@ -122,49 +203,7 @@ export default function MedicalInformation() {
           value: Number(formData.weight),
           unit: "kg",
           recorded_at: now,
-        });
-      }
-
-      if (formData.systolic && !isNaN(Number(formData.systolic))) {
-        measurements.push({
-          checkup_id: checkup.id,
-          type: "bp_systolic",
-          value: Number(formData.systolic),
-          unit: "mmHg",
-          recorded_at: now,
-        });
-      }
-
-      if (formData.diastolic && !isNaN(Number(formData.diastolic))) {
-        measurements.push({
-          checkup_id: checkup.id,
-          type: "bp_diastolic",
-          value: Number(formData.diastolic),
-          unit: "mmHg",
-          recorded_at: now,
-        });
-      }
-
-      if (
-        formData.oxygenSaturation &&
-        !isNaN(Number(formData.oxygenSaturation))
-      ) {
-        measurements.push({
-          checkup_id: checkup.id,
-          type: "oxygen_saturation",
-          value: Number(formData.oxygenSaturation),
-          unit: "%",
-          recorded_at: now,
-        });
-      }
-
-      if (formData.pulserate && !isNaN(Number(formData.pulserate))) {
-        measurements.push({
-          checkup_id: checkup.id,
-          type: "pulse",
-          value: Number(formData.pulserate),
-          unit: "bpm",
-          recorded_at: now,
+          patient_id: patientData.id,
         });
       }
 
@@ -227,38 +266,36 @@ export default function MedicalInformation() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <Label>{t("medinfo.bp")}</Label>
-            <div className="flex gap-2 mt-1">
+            <Label htmlFor="systolic">{t("medinfo.bp")}</Label>
+            <div className="flex gap-2">
               <Input
+                id="systolic"
                 name="systolic"
-                type="number"
                 value={formData.systolic}
                 onChange={handleChange}
                 placeholder="Systolic"
-                disabled
-                className="bg-gray-100"
+                readOnly
               />
               <Input
+                id="diastolic"
                 name="diastolic"
-                type="number"
                 value={formData.diastolic}
                 onChange={handleChange}
                 placeholder="Diastolic"
-                disabled
-                className="bg-gray-100"
+                readOnly
               />
             </div>
           </div>
 
           <div>
-            <Label>{t("medinfo.oxygen")}</Label>
+            <Label htmlFor="oxygenSaturation">{t("medinfo.oxygen")}</Label>
             <Input
-              type="number"
+              id="oxygenSaturation"
               name="oxygenSaturation"
               value={formData.oxygenSaturation}
               onChange={handleChange}
-              className="mt-1 bg-gray-100"
-              disabled
+              placeholder="SpO2 %"
+              readOnly
             />
           </div>
 
@@ -270,19 +307,19 @@ export default function MedicalInformation() {
               value={formData.temperature}
               onChange={handleChange}
               className="mt-1 bg-gray-100"
-              disabled
+              readOnly
             />
           </div>
 
           <div>
-            <Label>{t("medinfo.pulse")}</Label>
+            <Label htmlFor="pulserate">{t("medinfo.pulse")}</Label>
             <Input
-              type="number"
+              id="pulserate"
               name="pulserate"
               value={formData.pulserate}
               onChange={handleChange}
-              className="mt-1 bg-gray-100"
-              disabled
+              placeholder="BPM"
+              readOnly
             />
           </div>
 

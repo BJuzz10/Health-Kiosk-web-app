@@ -1,8 +1,9 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useState, useEffect } from "react";
 import { FaChevronLeft } from "react-icons/fa";
-import { FiSearch, FiX } from "react-icons/fi";
+import { FiSearch } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,12 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { createClient } from "@/utils/supabase/client";
 
 // Time Display Component
 function TimeDisplay() {
@@ -41,32 +37,199 @@ function TimeDisplay() {
 
 // Patient Data Interface
 interface Patient {
+  id: string;
   name: string;
   status: "Online" | "Offline";
-  inMeet: boolean;
+  auth_id: string | null;
 }
 
-// Sample Patients List
-const patientsList: Patient[] = [
-  { name: "Juan Dela Cruz", status: "Online", inMeet: true },
-  { name: "Maria Santos", status: "Offline", inMeet: false },
-  { name: "Carlos Reyes", status: "Online", inMeet: false },
-  { name: "Angela Flores", status: "Offline", inMeet: false },
-];
+interface PresenceState {
+  user_id: string;
+  online_at: number;
+}
+
+interface PresenceStateMap {
+  [key: string]: PresenceState[];
+}
 
 export default function PatientsAppointments() {
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [filteredPatients, setFilteredPatients] = useState(patientsList);
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  // Initialize Supabase client
+  const supabase = createClient();
+
+  // Fetch patients and setup presence channel
   useEffect(() => {
-    setFilteredPatients(
-      patientsList.filter((patient) =>
+    const fetchPatients = async () => {
+      try {
+        setLoading(true);
+        console.log("Starting to fetch patients...");
+
+        // Fetch all patients from the database - include internal ID
+        console.log("Fetching patients from database...");
+        const { data: patientData, error: dbError } = await supabase
+          .from("patient_data")
+          .select("id, name, auth_id");
+
+        console.log("Database response:", { patientData, dbError });
+
+        if (dbError) {
+          throw new Error("Database error: " + dbError.message);
+        }
+
+        if (!patientData) {
+          console.log("No patients found in database");
+          setPatients([]);
+          return;
+        }
+
+        // Initialize patients with offline status
+        const initialPatients: Patient[] = patientData.map((patient) => ({
+          id: patient.id,
+          name: patient.name,
+          auth_id: patient.auth_id,
+          status: "Offline",
+        }));
+
+        setPatients(initialPatients);
+        setFilteredPatients(initialPatients);
+
+        // Set up presence channel for patients with auth_id
+        const channel = supabase.channel("patient-presence", {
+          config: {
+            presence: {
+              key: "patient-status",
+            },
+          },
+        });
+
+        // Handle presence state changes
+        channel.on("presence", { event: "sync" }, () => {
+          const state = channel.presenceState() as PresenceStateMap;
+          console.log("Presence state updated:", state);
+
+          // Get all online user IDs from the presence state
+          const onlineUserIds = new Set<string>();
+          Object.values(state).forEach((presences) => {
+            presences.forEach((presence) => {
+              if (presence.user_id) {
+                onlineUserIds.add(presence.user_id);
+              }
+            });
+          });
+
+          // Update patients' online status if they have an auth_id
+          setPatients((prev) =>
+            prev.map((patient) => ({
+              ...patient,
+              status:
+                patient.auth_id && onlineUserIds.has(patient.auth_id)
+                  ? "Online"
+                  : "Offline",
+            }))
+          );
+        });
+
+        // Subscribe to the channel
+        channel.subscribe(async (status) => {
+          if (status === "SUBSCRIBED") {
+            // For doctor, track that we're monitoring
+            const {
+              data: { user },
+            } = await supabase.auth.getUser();
+            if (user) {
+              await channel.track({
+                online_at: new Date().getTime(),
+                user_id: user.id,
+                role: "doctor",
+              });
+            }
+          }
+        });
+
+        // Set up individual channels only for patients with auth_id
+        patientData.forEach((patient) => {
+          if (patient.auth_id) {
+            const patientChannel = supabase.channel(`user-${patient.auth_id}`, {
+              config: {
+                presence: {
+                  key: patient.auth_id,
+                },
+              },
+            });
+
+            patientChannel.on("presence", { event: "sync" }, () => {
+              const state = patientChannel.presenceState() as PresenceStateMap;
+              console.log(`Patient ${patient.name} presence state:`, state);
+
+              // Update this specific patient's status
+              setPatients((prev) =>
+                prev.map((p) => {
+                  if (p.auth_id === patient.auth_id) {
+                    return {
+                      ...p,
+                      status:
+                        Object.keys(state).length > 0 ? "Online" : "Offline",
+                    };
+                  }
+                  return p;
+                })
+              );
+            });
+
+            patientChannel.subscribe();
+          }
+        });
+      } catch (error) {
+        console.error("Error fetching patients:", error);
+        alert(
+          error instanceof Error ? error.message : "Error fetching patients"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPatients();
+
+    // Cleanup function
+    return () => {
+      const mainChannel = supabase.channel("patient-presence");
+      mainChannel.unsubscribe();
+
+      // Cleanup individual patient channels
+      patients.forEach((patient) => {
+        if (patient.auth_id) {
+          const patientChannel = supabase.channel(`user-${patient.auth_id}`);
+          patientChannel.unsubscribe();
+        }
+      });
+    };
+  }, []);
+
+  // Filter patients based on search
+  useEffect(() => {
+    if (!search.trim()) {
+      setFilteredPatients(patients);
+    } else {
+      const filtered = patients.filter((patient) =>
         patient.name.toLowerCase().includes(search.toLowerCase())
-      )
+      );
+      setFilteredPatients(filtered);
+    }
+  }, [search, patients]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      </div>
     );
-  }, [search]);
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white p-4 flex flex-col items-center relative pt-20">
@@ -100,7 +263,6 @@ export default function PatientsAppointments() {
             <TableRow>
               <TableHead>Patient Name</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>In Meet</TableHead>
               <TableHead>Action</TableHead>
             </TableRow>
           </TableHeader>
@@ -121,19 +283,12 @@ export default function PatientsAppointments() {
                     </span>
                   </TableCell>
                   <TableCell>
-                    {patient.inMeet ? (
-                      <span className="text-green-600 font-semibold">
-                        ✅ In Meet
-                      </span>
-                    ) : (
-                      <span className="text-gray-500">❌ Not in Meet</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setSelectedPatient(patient)}
+                      onClick={() =>
+                        router.push(`/patientinfo?id=${patient.id}`)
+                      }
                     >
                       Info
                     </Button>
@@ -153,49 +308,6 @@ export default function PatientsAppointments() {
           </TableBody>
         </Table>
       </div>
-
-      {/* Patient Info Dialog */}
-      {selectedPatient && (
-        <Dialog
-          open={!!selectedPatient}
-          onOpenChange={() => setSelectedPatient(null)}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Patient Information</DialogTitle>
-            </DialogHeader>
-            <p>
-              <strong>Name:</strong> {selectedPatient.name}
-            </p>
-            <p>
-              <strong>Status:</strong>{" "}
-              <span
-                className={
-                  selectedPatient.status === "Online"
-                    ? "text-green-600"
-                    : "text-red-600"
-                }
-              >
-                {selectedPatient.status}
-              </span>
-            </p>
-            <p>
-              <strong>Google Meet:</strong>{" "}
-              {selectedPatient.inMeet ? (
-                <span className="text-green-600">✅ In Meet</span>
-              ) : (
-                <span className="text-gray-500">❌ Not in Meet</span>
-              )}
-            </p>
-            <Button
-              variant="destructive"
-              onClick={() => setSelectedPatient(null)}
-            >
-              <FiX /> Close
-            </Button>
-          </DialogContent>
-        </Dialog>
-      )}
 
       {/* Back Button */}
       <div className="w-full max-w-5xl mt-6 flex justify-start">

@@ -1,22 +1,38 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { FaPrint, FaFilePdf, FaArrowLeft } from "react-icons/fa";
+import { FaPrint, FaArrowLeft, FaDownload, FaEye } from "react-icons/fa";
 import { FiX } from "react-icons/fi";
 import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
+import { createClient } from "@/utils/supabase/client";
+
+const supabase = createClient();
 
 interface Prescription {
-  date: string;
-  fileUrl: string;
+  id: string;
+  file_name: string;
+  file_path: string;
+  file_type: string;
+  prescription_date: string;
+  upload_date: string;
+  doctor_name: string | null;
+  notes: string | null;
 }
 
 export default function PrescriptionsPage() {
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
-  const [selectedPrescription, setSelectedPrescription] = useState<
-    string | null
-  >(null);
+  const [selectedPrescription, setSelectedPrescription] = useState<{
+    url: string;
+    data: Prescription | null;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // Add print styles
   useEffect(() => {
@@ -42,99 +58,324 @@ export default function PrescriptionsPage() {
     };
   }, []);
 
-  // Simulate fetching from API
+  // Fetch prescriptions from Supabase
   useEffect(() => {
     const fetchPrescriptions = async () => {
-      // Replace with actual fetch logic later
-      const mockData: Prescription[] = [
-        { date: "March 20, 2025", fileUrl: "/prescriptions/march_20_2025.pdf" },
-        { date: "March 15, 2025", fileUrl: "/prescriptions/march_15_2025.pdf" },
-        { date: "March 10, 2025", fileUrl: "/prescriptions/march_10_2025.pdf" },
-      ];
-      setPrescriptions(mockData);
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Get current user
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+        if (userError || !user) {
+          throw new Error("User not authenticated");
+        }
+
+        // Get patient's internal record ID first
+        const { data: patientData, error: patientError } = await supabase
+          .from("patient_data")
+          .select("id")
+          .eq("auth_id", user.id)
+          .single();
+
+        if (patientError || !patientData) {
+          throw new Error("Patient data not found");
+        }
+
+        // Fetch prescriptions using internal ID
+        const { data, error } = await supabase
+          .from("prescriptions")
+          .select("*")
+          .eq("patient_id", patientData.id)
+          .order("upload_date", { ascending: false });
+
+        if (error) throw error;
+
+        setPrescriptions(data || []);
+      } catch (err: unknown) {
+        console.error("Error fetching prescriptions:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to load prescriptions"
+        );
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchPrescriptions();
   }, []);
 
-  const handlePrint = () => {
-    if (selectedPrescription) {
-      // Print the current page instead of opening a new tab
-      window.print();
+  const handleViewPrescription = async (prescription: Prescription) => {
+    try {
+      // Get a signed URL for the file
+      const { data, error } = await supabase.storage
+        .from("prescriptions")
+        .createSignedUrl(prescription.file_path, 60); // URL valid for 60 seconds
+
+      if (error) throw error;
+
+      if (!data.signedUrl) throw new Error("Failed to get file URL");
+
+      setSelectedPrescription({
+        url: data.signedUrl,
+        data: prescription,
+      });
+    } catch (err: unknown) {
+      console.error("Error viewing prescription:", err);
+      alert("Failed to view prescription");
     }
   };
+
+  const handleDownload = async (prescription: Prescription) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from("prescriptions")
+        .download(prescription.file_path);
+
+      if (error) throw error;
+
+      // Create download link
+      const url = URL.createObjectURL(data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = prescription.file_name;
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err: unknown) {
+      console.error("Error downloading prescription:", err);
+      alert("Failed to download prescription");
+    }
+  };
+
+  const handlePrint = () => {
+    if (selectedPrescription) {
+      // Create a temporary container for printing
+      const printWindow = window.open("", "_blank");
+
+      if (!printWindow) {
+        alert("Please allow pop-ups to print prescriptions");
+        return;
+      }
+
+      // For image files
+      if (selectedPrescription.data?.file_type.includes("image")) {
+        printWindow.document.write(`
+          <html>
+            <head>
+              <title>Print Prescription</title>
+              <style>
+                body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+                img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+              </style>
+            </head>
+            <body>
+              <img src="${selectedPrescription.url}" alt="Prescription" />
+              <script>
+                window.onload = function() { window.print(); window.close(); }
+              </script>
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+      }
+      // For PDF files
+      else {
+        printWindow.location.href = selectedPrescription.url;
+        setTimeout(() => {
+          printWindow.print();
+        }, 1000); // Give the PDF time to load
+      }
+    }
+  };
+
+  // Function to truncate file name if it's too long
+  const truncateFileName = (fileName: string, maxLength = 20) => {
+    if (fileName.length <= maxLength) return fileName;
+
+    const extension = fileName.split(".").pop() || "";
+    const nameWithoutExt = fileName.substring(
+      0,
+      fileName.length - extension.length - 1
+    );
+
+    return `${nameWithoutExt.substring(
+      0,
+      maxLength - extension.length - 3
+    )}...${extension}`;
+  };
+
+  if (loading)
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white flex flex-col items-center justify-center">
+        <div className="text-xl">Loading prescriptions...</div>
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white flex flex-col items-center justify-center">
+        <div className="text-xl text-red-500">Error: {error}</div>
+        <Button className="mt-4" onClick={() => router.push("/dashboard")}>
+          Back to Dashboard
+        </Button>
+      </div>
+    );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white flex flex-col p-6 space-y-6 md:flex-row md:space-x-6 md:space-y-0 print:bg-white print:p-0">
       {/* Left Side: Prescription List */}
-      <div className="w-full md:w-1/3 bg-white shadow-xl rounded-lg p-6 relative no-print">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-          Previous Prescriptions
+      <div className="w-full md:w-1/4 bg-white shadow-xl rounded-lg p-4 relative no-print flex flex-col">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4 px-2">
+          Prescriptions
         </h2>
-        {prescriptions.length > 0 ? (
-          <ul className="space-y-4">
-            {prescriptions.map((prescription, index) => (
-              <li key={index}>
-                <Button
-                  variant="outline"
-                  className="w-full flex items-center justify-between px-4 py-3 border rounded-lg hover:bg-gray-200 transition duration-300"
-                  onClick={() => setSelectedPrescription(prescription.fileUrl)}
-                >
-                  <span>{prescription.date}</span>
-                  <FaFilePdf className="text-red-500" />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-gray-500">No prescriptions found.</p>
-        )}
 
-        <Button
-          onClick={handlePrint}
-          disabled={!selectedPrescription}
-          className="w-full mt-6 flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700 transition duration-300"
+        {/* Scrollable prescription list */}
+        <div
+          ref={listRef}
+          className="flex-1 overflow-y-auto pr-1 mb-4"
+          style={{ maxHeight: "calc(100vh - 240px)" }}
         >
-          <FaPrint /> Print Prescription
-        </Button>
+          {prescriptions.length > 0 ? (
+            <div className="space-y-2">
+              {prescriptions.map((prescription) => (
+                <div
+                  key={prescription.id}
+                  className={`cursor-pointer transition-colors p-3 rounded-lg flex items-center justify-between ${
+                    selectedPrescription?.data?.id === prescription.id
+                      ? "bg-blue-100 border border-blue-300"
+                      : "hover:bg-gray-50 border border-gray-100"
+                  }`}
+                  onClick={() => handleViewPrescription(prescription)}
+                >
+                  <div className="flex-1 min-w-0 mr-2">
+                    <div
+                      className="font-medium text-sm truncate"
+                      title={prescription.file_name}
+                    >
+                      {truncateFileName(prescription.file_name)}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {format(
+                        new Date(prescription.upload_date),
+                        "MMM dd, yyyy"
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 rounded-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownload(prescription);
+                    }}
+                    title="Download"
+                  >
+                    <FaDownload className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center p-4">
+              No prescriptions found.
+            </p>
+          )}
+        </div>
 
-        <div className="absolute bottom-6 left-6 z-10">
+        {/* Back button */}
+        <div className="mt-auto">
           <Button
-            variant="ghost"
+            variant="outline"
             onClick={() => router.push("/dashboard")}
-            className="flex items-center gap-2 bg-black text-white hover:bg-gray-800 transition duration-300 p-2 rounded-lg"
+            className="flex items-center gap-2 w-full"
           >
-            <FaArrowLeft /> Back to Dashboard
+            <FaArrowLeft size={14} /> Back to Dashboard
           </Button>
         </div>
       </div>
 
       {/* Right Side: PDF Preview */}
-      <div className="w-full md:w-2/3 flex justify-center items-center p-6 print:w-full print:p-0">
+      <div className="w-full md:w-3/4 flex flex-col bg-white shadow-xl rounded-lg p-4 print:shadow-none print:p-0 print:border-0 print:h-auto">
         {selectedPrescription ? (
-          <div className="bg-white shadow-xl rounded-lg p-6 w-full h-[80vh] flex flex-col border print:shadow-none print:p-0 print:border-0 print:h-auto">
+          <>
             <div className="flex justify-between items-center mb-4 no-print">
-              <h2 className="text-xl font-semibold text-gray-800">
-                Prescription Preview
-              </h2>
-              <Button
-                variant="destructive"
-                onClick={() => setSelectedPrescription(null)}
-                className="bg-red-500 hover:bg-red-600 text-white"
-              >
-                <FiX /> Close
-              </Button>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800">
+                  {selectedPrescription.data?.file_name}
+                </h2>
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <span>
+                    Prescribed:{" "}
+                    {format(
+                      new Date(
+                        selectedPrescription.data?.prescription_date || ""
+                      ),
+                      "MMM dd, yyyy"
+                    )}
+                  </span>
+                  {selectedPrescription.data?.doctor_name && (
+                    <>
+                      <span>•</span>
+                      <span>
+                        Doctor: {selectedPrescription.data.doctor_name}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePrint}
+                  className="flex items-center gap-1"
+                  disabled={!selectedPrescription}
+                >
+                  <FaPrint size={14} /> Print
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedPrescription(null)}
+                  className="flex items-center gap-1"
+                >
+                  <FiX size={16} />
+                </Button>
+              </div>
             </div>
-            <iframe
-              src={selectedPrescription}
-              className="w-full h-full border rounded-lg print:border-0"
-              title="Prescription PDF"
-            />
-          </div>
+
+            {/* Display based on file type */}
+            <div className="flex-1 border rounded-lg overflow-hidden min-h-[500px] print:border-0">
+              {selectedPrescription.data?.file_type.includes("image") ? (
+                <div className="flex-1 flex items-center justify-center overflow-auto h-full">
+                  <img
+                    src={selectedPrescription.url || "/placeholder.svg"}
+                    alt="Prescription"
+                    className="max-w-full max-h-[70vh] object-contain"
+                  />
+                </div>
+              ) : (
+                <iframe
+                  ref={iframeRef}
+                  src={selectedPrescription.url}
+                  className="w-full h-full border-0"
+                  title="Prescription PDF"
+                />
+              )}
+            </div>
+          </>
         ) : (
-          <p className="text-gray-500 text-lg">
-            Select a prescription to preview
-          </p>
+          <div className="flex-1 flex flex-col items-center justify-center min-h-[500px] text-gray-500">
+            <FaEye size={48} className="text-gray-300 mb-4" />
+            <p className="text-lg">Select a prescription to preview</p>
+          </div>
         )}
       </div>
     </div>

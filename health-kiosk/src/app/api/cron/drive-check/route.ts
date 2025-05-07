@@ -13,7 +13,7 @@ export async function GET() {
     for (const file of files) {
       console.log(`Processing file: ${file.name} (ID: ${file.id})`);
       const content = await monitor.getFileContent(file.id);
-      await filter.processCSV(content);
+      await filter.processFile(content, file.name);
       console.log(`Successfully processed: ${file.name}`);
     }
 

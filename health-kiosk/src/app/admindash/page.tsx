@@ -7,18 +7,37 @@ import {
   FaUsers,
   FaHospital,
   FaSignOutAlt,
+  FaKey,
+  FaUndo,
 } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { signOut } from "@/lib/supabase-auth";
 import { useLanguage } from "@/context/LanguageContext";
+import { createClient } from "@/utils/supabase/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function DoctorsHomePage() {
   const router = useRouter();
+  const supabase = createClient();
   const { t, language, setLanguage } = useLanguage();
   const [currentTime, setCurrentTime] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     setMounted(true);
@@ -52,10 +71,82 @@ export default function DoctorsHomePage() {
     setLanguage(language === "en" ? "tl" : "en");
   };
 
+  const handleAdminSettings = () => {
+    setIsSettingsOpen(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+  };
+
+  const handlePasswordChange = async () => {
+    try {
+      // Validate current password
+      const { data: adminSettings } = await supabase
+        .from("admin_settings")
+        .select("admin_code")
+        .single();
+
+      if (!adminSettings || adminSettings.admin_code !== currentPassword) {
+        setErrorMessage("Current password is incorrect");
+        return;
+      }
+
+      // Validate new password
+      if (newPassword.length < 5) {
+        setErrorMessage("New password must be at least 5 characters long");
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        setErrorMessage("New passwords do not match");
+        return;
+      }
+
+      // Update password in database
+      const { error: updateError } = await supabase
+        .from("admin_settings")
+        .update({ admin_code: newPassword })
+        .eq("id", 1);
+
+      if (updateError) throw updateError;
+
+      setSuccessMessage("Password updated successfully!");
+      setTimeout(() => {
+        setIsSettingsOpen(false);
+        setSuccessMessage("");
+      }, 2000);
+    } catch (error) {
+      console.error("Error updating password:", error);
+      setErrorMessage("Failed to update password. Please try again.");
+    }
+  };
+
+  const handleResetPassword = async () => {
+    try {
+      const { error: resetError } = await supabase
+        .from("admin_settings")
+        .update({ admin_code: "12345" })
+        .eq("id", 1);
+
+      if (resetError) throw resetError;
+
+      setSuccessMessage("Password reset to default (12345)");
+      setTimeout(() => {
+        setIsSettingsOpen(false);
+        setSuccessMessage("");
+      }, 2000);
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      setErrorMessage("Failed to reset password. Please try again.");
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await signOut();
-      router.push("/"); // Changed from /form to /
+      router.push("/form");
     } catch (error) {
       console.error("Error signing out: ", error);
     }
@@ -82,6 +173,14 @@ export default function DoctorsHomePage() {
             className="px-6 py-3 text-blue-700 text-lg font-semibold"
           >
             {t("language.toggle")}
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={handleAdminSettings}
+            className="px-6 py-3 text-blue-700 text-lg font-semibold"
+          >
+            {t("admin.Settings")}
           </Button>
         </div>
 
@@ -138,6 +237,65 @@ export default function DoctorsHomePage() {
             {t("logout.button")}
           </Button>
         </div>
+
+        {/* Admin Settings Dialog */}
+        <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Admin Settings</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="current-password">Current Password</Label>
+                <Input
+                  id="current-password"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="new-password">New Password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="confirm-password">Confirm New Password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
+              {errorMessage && (
+                <p className="text-red-500 text-sm">{errorMessage}</p>
+              )}
+              {successMessage && (
+                <p className="text-green-500 text-sm">{successMessage}</p>
+              )}
+            </div>
+            <DialogFooter className="flex flex-col sm:flex-row gap-2">
+              <Button
+                variant="outline"
+                onClick={handleResetPassword}
+                className="flex items-center gap-2"
+              >
+                <FaUndo /> Reset to Default
+              </Button>
+              <Button
+                onClick={handlePasswordChange}
+                className="flex items-center gap-2"
+              >
+                <FaKey /> Change Password
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Footer */}
         <div className="mt-10 text-gray-500 text-lg font-medium text-center">

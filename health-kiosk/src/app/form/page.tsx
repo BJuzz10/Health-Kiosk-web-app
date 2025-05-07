@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/context/LanguageContext";
+import { createClient } from "@/utils/supabase/client";
 
 export default function HealthKiosk() {
   const [adminCode, setAdminCode] = useState("");
@@ -21,16 +22,39 @@ export default function HealthKiosk() {
   const router = useRouter();
   const { t, language, setLanguage } = useLanguage();
   const [mounted, setMounted] = useState(false);
+  const supabase = createClient();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const handleAdminLogin = () => {
-    if (adminCode === "12345") {
-      router.push("/adminlogin");
-    } else {
-      setErrorMessage("Invalid code. Please try again.");
+  const handleAdminLogin = async () => {
+    try {
+      // Fetch the current admin code from the database
+      const { data: adminSettings, error } = await supabase
+        .from("admin_settings")
+        .select("admin_code")
+        .single();
+
+      if (error) {
+        console.error("Error fetching admin code:", error);
+        setErrorMessage("Error verifying code. Please try again.");
+        return;
+      }
+
+      if (!adminSettings) {
+        setErrorMessage("System configuration error. Please contact support.");
+        return;
+      }
+
+      if (adminCode === adminSettings.admin_code) {
+        router.push("/adminlogin");
+      } else {
+        setErrorMessage("Invalid code. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error in admin login:", error);
+      setErrorMessage("An error occurred. Please try again.");
     }
   };
 

@@ -1,117 +1,425 @@
 import { parse } from "csv-parse/sync";
 import { createClient } from "@/utils/supabase/client";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import * as XLSX from "xlsx";
+import { v4 as uuidv4 } from "uuid";
 
-interface VitalData {
-  user_id: string;
-  timestamp: string;
-  blood_pressure?: {
-    systolic: number;
-    diastolic: number;
-  };
-  temperature?: number;
-  heart_rate?: number;
-  // Add other vital signs as needed
+interface VitalMeasurement {
+  checkup_id: string;
+  type:
+    | "bp_systolic"
+    | "bp_diastolic"
+    | "temperature"
+    | "pulse"
+    | "oxygen_saturation"
+    | "height_cm"
+    | "weight_kg";
+  value: number;
+  unit: string;
+  patient_id?: string;
 }
 
-interface CSVRecord {
-  user_id: string;
-  timestamp: string;
-  systolic?: string;
-  diastolic?: string;
-  temperature?: string;
-  heart_rate?: string;
+interface OmronRecord {
+  "Measurement Date": string;
+  Timezone: string;
+  "SYS(mmHg)": string;
+  "DIA(mmHg)": string;
+  "Pulse(bpm)": string;
+  "Irregular heartbeat": string;
+  "IHB detection count": string;
+  "Body Movement": string;
+  "Cuff wrap guide": string;
+  "Positioning Indicator": string;
+  "room temperature(°C": string;
+  "Measurement Mode": string;
+  Device: string;
+}
+
+interface HealthTreeRecord {
+  ID: string | number;
+  Time: string;
+  "SPO2(%)": string | number;
+  "PR(bpm)": string | number;
 }
 
 export class DataFilter {
-  private supabase: SupabaseClient | null = null;
+  private supabase = createClient();
 
-  async initialize() {
-    if (!this.supabase) {
-      this.supabase = createClient();
+  private convertExcelToCSV(fileContent: Uint8Array): string {
+    try {
+      // Read the Excel file
+      const workbook = XLSX.read(fileContent, { type: "array" });
+
+      // Get the first sheet
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+
+      // Convert to CSV
+      const csvContent = XLSX.utils.sheet_to_csv(worksheet);
+      console.log("Converted Excel to CSV:", csvContent.substring(0, 200));
+
+      return csvContent;
+    } catch (error) {
+      console.error("Error converting Excel to CSV:", error);
+      throw new Error("Failed to convert Excel file to CSV");
     }
   }
 
-  private determineFilterType(csvContent: string): string {
+  private determineFileType(fileContent: Uint8Array): "excel" | "csv" {
+    // Check for Excel file magic numbers
+    const header = fileContent.slice(0, 4);
+    const excelMagicNumbers = {
+      // XLSX magic numbers
+      xlsx: [0x50, 0x4b, 0x03, 0x04],
+      // XLS magic numbers
+      xls: [0xd0, 0xcf, 0x11, 0xe0],
+    };
+
+    if (
+      header.every((value, index) => value === excelMagicNumbers.xlsx[index]) ||
+      header.every((value, index) => value === excelMagicNumbers.xls[index])
+    ) {
+      return "excel";
+    }
+
+    return "csv";
+  }
+
+  private determineFilterType(filename: string): string {
+    console.log("Analyzing filename:", filename);
+
+    // Convert to lowercase for case-insensitive matching
+    const lowerFilename = filename.toLowerCase();
+
     // Check for Beurer specific patterns
-    if (csvContent.includes("HealthManagerPro")) {
+    if (lowerFilename.includes("healthmanagerpro")) {
+      console.log("Detected Beurer format");
       return "beurer";
     }
+
     // Check for Omron specific patterns
-    if (csvContent.includes("[OMRON]")) {
+    if (lowerFilename.includes("[omron]")) {
+      console.log("Detected Omron format");
       return "omron";
     }
+
     // Check for HealthTree specific patterns
-    if (csvContent.includes("DataRecord")) {
+    if (lowerFilename.includes("datarecord")) {
+      console.log("Detected HealthTree format");
       return "healthtree";
     }
-    return "unknown";
+
+    console.log("Could not determine format from filename:", filename);
+    throw new Error(
+      "Could not determine device type from filename: " + filename
+    );
   }
 
-  private async processBeurerData(csvContent: string): Promise<VitalData[]> {
+  private async getCurrentPatientId(): Promise<string> {
+    const {
+      data: { user },
+      error: userError,
+    } = await this.supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error("Authentication required");
+    }
+
+    const { data: patientData, error: patientError } = await this.supabase
+      .from("patient_data")
+      .select("id")
+      .eq("email", user.email)
+      .single();
+
+    if (patientError || !patientData) {
+      throw new Error("Patient data not found");
+    }
+
+    return patientData.id;
+  }
+
+  private async processBeurerData(
+    csvContent: string,
+    patientId: string
+  ): Promise<VitalMeasurement[]> {
+    const cleanContent = csvContent.replace(/^\\uFEFF/, "");
+    const sections = cleanContent.split(/\r?\n\r?\n/);
+    const measurements: VitalMeasurement[] = [];
+
+    const temperatureSection = sections.find((section) =>
+      section.trim().startsWith("Temperature")
+    );
+
+    if (temperatureSection) {
+      const lines = temperatureSection.split(/\r?\n/);
+      const headerIndex = lines.findIndex(
+        (line) =>
+          line.includes("Date") && line.includes("Time") && line.includes("°C")
+      );
+
+      if (headerIndex !== -1) {
+        const temperatureLines = lines
+          .slice(headerIndex + 1)
+          .filter((line) => line.trim());
+        if (temperatureLines.length > 0) {
+          const mostRecentRecord = temperatureLines[0]; // Take only the most recent record
+          const [date, time, temperature] = mostRecentRecord.split(";");
+          if (date && time && temperature) {
+            const [month, day, year] = date.split("/");
+            const [timeStr] = time.split(",");
+            const [hours, minutes] = timeStr.split(":");
+            const isPM = timeStr.toLowerCase().includes("pm");
+
+            let hour = parseInt(hours);
+            if (isPM && hour < 12) hour += 12;
+            if (!isPM && hour === 12) hour = 0;
+
+            const checkupTimestamp = `${year}-${month.padStart(
+              2,
+              "0"
+            )}-${day.padStart(2, "0")} ${hour
+              .toString()
+              .padStart(2, "0")}:${minutes.padStart(2, "0")}`;
+
+            const checkupId = uuidv4();
+            const { error: checkupError } = await this.supabase
+              .from("checkups")
+              .insert({
+                id: checkupId,
+                patient_id: patientId,
+                checkup_date: checkupTimestamp,
+                reason: "Temperature measurement from Beurer device",
+                created_at: new Date().toISOString(),
+              });
+
+            if (checkupError) {
+              console.error("Error creating checkup:", checkupError);
+              throw new Error(
+                `Failed to create checkup: ${checkupError.message}`
+              );
+            }
+
+            measurements.push({
+              checkup_id: checkupId,
+              type: "temperature",
+              value: parseFloat(temperature),
+              unit: "°C",
+              patient_id: patientId,
+            });
+          }
+        }
+      }
+    }
+
+    return measurements;
+  }
+
+  private async processOmronData(
+    csvContent: string,
+    patientId: string
+  ): Promise<VitalMeasurement[]> {
+    const cleanContent = csvContent.replace(/^\uFEFF/, "");
+    const records = parse(cleanContent, {
+      columns: true,
+      skip_empty_lines: true,
+      delimiter: ",",
+      bom: true,
+      trim: true,
+    }) as OmronRecord[];
+
+    const sortedRecords = records.sort((a: OmronRecord, b: OmronRecord) => {
+      const dateA = this.parseOmronDate(a["Measurement Date"], a["Timezone"]);
+      const dateB = this.parseOmronDate(b["Measurement Date"], b["Timezone"]);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    const latestRecord = sortedRecords[0];
+    if (!latestRecord) {
+      throw new Error("No records found in Omron data");
+    }
+
+    const timestamp = this.parseOmronDate(
+      latestRecord["Measurement Date"],
+      latestRecord["Timezone"]
+    ).toISOString();
+
+    const checkupId = uuidv4();
+    const { error: checkupError } = await this.supabase
+      .from("checkups")
+      .insert({
+        id: checkupId,
+        patient_id: patientId,
+        checkup_date: timestamp,
+        reason: "Blood pressure measurement from Omron device",
+        created_at: new Date().toISOString(),
+      });
+
+    if (checkupError) {
+      console.error("Error creating checkup:", checkupError);
+      throw new Error(`Failed to create checkup: ${checkupError.message}`);
+    }
+
+    const measurements: VitalMeasurement[] = [];
+
+    if (latestRecord["SYS(mmHg)"]) {
+      measurements.push({
+        checkup_id: checkupId,
+        type: "bp_systolic",
+        value: Number(latestRecord["SYS(mmHg)"]),
+        unit: "mmHg",
+        patient_id: patientId,
+      });
+    }
+
+    if (latestRecord["DIA(mmHg)"]) {
+      measurements.push({
+        checkup_id: checkupId,
+        type: "bp_diastolic",
+        value: Number(latestRecord["DIA(mmHg)"]),
+        unit: "mmHg",
+        patient_id: patientId,
+      });
+    }
+
+    return measurements;
+  }
+
+  private parseOmronDate(date: string, timezone: string): Date {
+    // Convert YYYY/MM/DD HH:mm to YYYY-MM-DD HH:mm
+    const formattedDate = date.replace(/\//g, "-");
+    // Create a date string with the timezone
+    const dateString = `${formattedDate}:00${
+      timezone === "Asia/Manila" ? "+08:00" : "Z"
+    }`;
+    return new Date(dateString);
+  }
+
+  public async processFile(
+    fileContent: ArrayBuffer | string,
+    filename: string,
+    patientId?: string
+  ): Promise<void> {
+    try {
+      // Get current user's patient ID if not provided
+      if (!patientId) {
+        patientId = await this.getCurrentPatientId();
+      }
+
+      const deviceType = this.determineFilterType(filename);
+      let measurements: VitalMeasurement[] = [];
+
+      if (deviceType === "healthtree") {
+        let csvContent: string;
+        if (typeof fileContent !== "string") {
+          csvContent = this.convertExcelToCSV(new Uint8Array(fileContent));
+        } else {
+          csvContent = fileContent;
+        }
+        measurements = await this.processHealthTreeData(csvContent, patientId);
+      } else {
+        const buffer =
+          typeof fileContent === "string"
+            ? new TextEncoder().encode(fileContent)
+            : new Uint8Array(fileContent);
+        const fileType = this.determineFileType(buffer);
+        const csvContent =
+          fileType === "excel"
+            ? this.convertExcelToCSV(buffer)
+            : typeof fileContent === "string"
+            ? fileContent
+            : new TextDecoder().decode(buffer);
+
+        switch (deviceType) {
+          case "beurer":
+            measurements = await this.processBeurerData(csvContent, patientId);
+            break;
+          case "omron":
+            measurements = await this.processOmronData(csvContent, patientId);
+            break;
+          default:
+            throw new Error("Unsupported device type");
+        }
+      }
+
+      if (measurements.length === 0) {
+        throw new Error("No valid measurements found in the file");
+      }
+
+      const { error } = await this.supabase
+        .from("vital_measurements")
+        .upsert(measurements);
+
+      if (error) {
+        console.error("Error upserting data:", error);
+        throw new Error(`Failed to upsert data: ${error.message}`);
+      }
+    } catch (error) {
+      console.error("Error processing file:", error);
+      throw new Error(
+        `Failed to process file: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  }
+
+  private async processHealthTreeData(
+    csvContent: string,
+    patientId: string
+  ): Promise<VitalMeasurement[]> {
     const records = parse(csvContent, {
       columns: true,
       skip_empty_lines: true,
-    });
+      delimiter: ",",
+      bom: true,
+      trim: true,
+    }) as HealthTreeRecord[];
 
-    return records.map((record: CSVRecord) => ({
-      user_id: record.user_id,
-      timestamp: record.timestamp,
-      blood_pressure:
-        record.systolic && record.diastolic
-          ? {
-              systolic: Number(record.systolic),
-              diastolic: Number(record.diastolic),
-            }
-          : undefined,
-      temperature: record.temperature ? Number(record.temperature) : undefined,
-      heart_rate: record.heart_rate ? Number(record.heart_rate) : undefined,
-    }));
-  }
-
-  private async processOmronData(): Promise<VitalData[]> {
-    // Implement Omron specific processing
-    return [];
-  }
-
-  private async processHealthTreeData(): Promise<VitalData[]> {
-    // Implement HealthTree specific processing
-    return [];
-  }
-
-  public async processCSV(csvContent: string): Promise<void> {
-    if (!this.supabase) {
-      throw new Error("Supabase client not initialized");
+    if (!Array.isArray(records) || records.length === 0) {
+      throw new Error("No records found in HealthTree data");
     }
 
-    const filterType = this.determineFilterType(csvContent);
-    let processedData: VitalData[];
+    const latestRecord = records[0];
+    const timeValue = latestRecord.Time?.toString() || "";
+    const [year, month] = timeValue
+      .split("-")
+      .map((num) => num.padStart(2, "0"));
+    const timestamp = `${year}-${month}-01 00:00:00`;
 
-    switch (filterType) {
-      case "beurer":
-        processedData = await this.processBeurerData(csvContent);
-        break;
-      case "omron":
-        processedData = await this.processOmronData();
-        break;
-      case "healthtree":
-        processedData = await this.processHealthTreeData();
-        break;
-      default:
-        throw new Error("Unknown filter type");
+    const checkupId = uuidv4();
+    const { error: checkupError } = await this.supabase
+      .from("checkups")
+      .insert({
+        id: checkupId,
+        patient_id: patientId,
+        checkup_date: timestamp,
+        reason: "Vital signs measurement from HealthTree device",
+        created_at: new Date().toISOString(),
+      });
+
+    if (checkupError) {
+      console.error("Error creating checkup:", checkupError);
+      throw new Error(`Failed to create checkup: ${checkupError.message}`);
     }
 
-    await this.updateVitals(processedData);
-  }
+    const measurements: VitalMeasurement[] = [];
 
-  private async updateVitals(data: VitalData[]): Promise<void> {
-    if (!this.supabase) {
-      throw new Error("Supabase client not initialized");
+    if (latestRecord["SPO2(%)"]) {
+      measurements.push({
+        checkup_id: checkupId,
+        type: "oxygen_saturation",
+        value: Number(latestRecord["SPO2(%)"]),
+        unit: "%",
+      });
     }
 
-    const { error } = await this.supabase.from("vitals").insert(data);
-    if (error) {
-      throw error;
+    if (latestRecord["PR(bpm)"]) {
+      measurements.push({
+        checkup_id: checkupId,
+        type: "pulse",
+        value: Number(latestRecord["PR(bpm)"]),
+        unit: "bpm",
+      });
     }
+
+    return measurements;
   }
 }

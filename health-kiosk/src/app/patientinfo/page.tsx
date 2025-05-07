@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect, type ChangeEvent } from "react";
+import { useState, useEffect, type ChangeEvent, Suspense } from "react";
 import { FaChevronLeft, FaChevronRight, FaSave } from "react-icons/fa";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { createClient } from "@/utils/supabase/client";
+import { calculateAge } from "@/lib/patient-data";
 
 interface PatientData {
   fullName: string;
-  status: string;
   age: string;
   sex: string;
   birthday: string;
@@ -27,11 +28,13 @@ interface PatientData {
   doctorNote: string;
 }
 
-export default function PatientInformationKiosk() {
+function PatientInfoContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const patientId = searchParams.get("id"); // This is now the internal patient ID
+
   const [formData, setFormData] = useState<PatientData>({
     fullName: "",
-    status: "Online",
     age: "",
     sex: "",
     birthday: "",
@@ -57,6 +60,92 @@ export default function PatientInformationKiosk() {
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch patient data when component mounts
+  useEffect(() => {
+    const fetchPatientData = async () => {
+      if (!patientId) return;
+
+      try {
+        const supabase = createClient();
+
+        // Get patient profile including doctor's note
+        const { data: patientData, error: patientError } = await supabase
+          .from("patient_data")
+          .select("*, doctor_note")
+          .eq("id", patientId) // Changed from auth_id to id
+          .single();
+
+        if (patientError) throw patientError;
+
+        // Get latest checkup - using internal ID directly since it matches patient_id in checkups
+        const { data: checkups, error: checkupsError } = await supabase
+          .from("checkups")
+          .select("reason")
+          .eq("patient_id", patientId)
+          .not("reason", "ilike", "%measurement from%device%")
+          .not("reason", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (checkupsError) throw checkupsError;
+
+        // Get vitals if there's a checkup
+        let vitals = null;
+        if (checkups) {
+          const { data: vitalsData, error: vitalsError } = await supabase
+            .from("vital_measurements")
+            .select("*")
+            .eq("patient_id", patientId) // Using internal ID directly
+            .order("recorded_at", { ascending: false });
+
+          if (vitalsError) throw vitalsError;
+          vitals = vitalsData;
+        }
+
+        // Format birthday if exists
+        const formattedBirthday = patientData.birthday
+          ? new Date(patientData.birthday).toISOString().split("T")[0]
+          : "";
+
+        // Get latest values for each vital type
+        const getLatestValue = (type: string) => {
+          if (!vitals) return "";
+          const measurement = vitals.find((v) => v.type === type);
+          return measurement ? measurement.value.toString() : "";
+        };
+
+        // Update form data
+        setFormData({
+          fullName: patientData.name || "",
+          age: patientData.birthday
+            ? calculateAge(new Date(patientData.birthday)).toString()
+            : "",
+          sex: patientData.sex || "",
+          birthday: formattedBirthday,
+          address: patientData.address || "",
+          contactNumber: patientData.contact || "",
+          height: getLatestValue("height_cm"),
+          weight: getLatestValue("weight_kg"),
+          systolic: getLatestValue("bp_systolic"),
+          diastolic: getLatestValue("bp_diastolic"),
+          pulseRate: getLatestValue("pulse"),
+          oxygenSaturation: getLatestValue("oxygen_saturation"),
+          temperature: getLatestValue("temperature"),
+          symptoms: Array.isArray(checkups)
+            ? checkups[0]?.reason || ""
+            : checkups?.reason || "",
+          doctorNote: patientData.doctor_note || "",
+        });
+      } catch (error) {
+        console.error("Error fetching patient data:", error);
+        alert("Error loading patient data");
+      }
+    };
+
+    fetchPatientData();
+  }, [patientId]);
+
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -64,8 +153,25 @@ export default function PatientInformationKiosk() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = () => {
-    console.log("Form data saved:", formData);
+  const handleSave = async () => {
+    if (!patientId) return;
+
+    try {
+      const supabase = createClient();
+
+      // Update the doctor's note for the patient
+      const { error } = await supabase
+        .from("patient_data")
+        .update({ doctor_note: formData.doctorNote })
+        .eq("id", patientId);
+
+      if (error) throw error;
+
+      alert("Doctor's note saved successfully!");
+    } catch (error) {
+      console.error("Error saving doctor's note:", error);
+      alert("Failed to save doctor's note");
+    }
   };
 
   return (
@@ -95,14 +201,7 @@ export default function PatientInformationKiosk() {
                 name="fullName"
                 value={formData.fullName}
                 onChange={handleChange}
-              />
-            </div>
-            <div>
-              <Label>Status</Label>
-              <Input
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
+                readOnly
               />
             </div>
             <div>
@@ -112,6 +211,7 @@ export default function PatientInformationKiosk() {
                 name="age"
                 value={formData.age}
                 onChange={handleChange}
+                readOnly
               />
             </div>
             <div>
@@ -125,6 +225,7 @@ export default function PatientInformationKiosk() {
                 name="birthday"
                 value={formData.birthday}
                 onChange={handleChange}
+                readOnly
               />
             </div>
             <div>
@@ -133,6 +234,7 @@ export default function PatientInformationKiosk() {
                 name="contactNumber"
                 value={formData.contactNumber}
                 onChange={handleChange}
+                readOnly
               />
             </div>
             <div className="md:col-span-2">
@@ -143,6 +245,7 @@ export default function PatientInformationKiosk() {
                 onChange={handleChange}
                 placeholder="Enter full address"
                 className="resize-none h-20"
+                readOnly
               />
             </div>
           </div>
@@ -164,6 +267,7 @@ export default function PatientInformationKiosk() {
                   value={formData.systolic}
                   onChange={handleChange}
                   placeholder="Systolic"
+                  readOnly
                 />
                 <Input
                   name="diastolic"
@@ -171,6 +275,7 @@ export default function PatientInformationKiosk() {
                   value={formData.diastolic}
                   onChange={handleChange}
                   placeholder="Diastolic"
+                  readOnly
                 />
               </div>
             </div>
@@ -182,6 +287,7 @@ export default function PatientInformationKiosk() {
                 value={formData.pulseRate}
                 onChange={handleChange}
                 placeholder="e.g., 72"
+                readOnly
               />
             </div>
             <div>
@@ -191,6 +297,7 @@ export default function PatientInformationKiosk() {
                 name="oxygenSaturation"
                 value={formData.oxygenSaturation}
                 onChange={handleChange}
+                readOnly
               />
             </div>
             <div>
@@ -200,6 +307,7 @@ export default function PatientInformationKiosk() {
                 name="temperature"
                 value={formData.temperature}
                 onChange={handleChange}
+                readOnly
               />
             </div>
             <div>
@@ -209,6 +317,7 @@ export default function PatientInformationKiosk() {
                 name="height"
                 value={formData.height}
                 onChange={handleChange}
+                readOnly
               />
             </div>
             <div>
@@ -218,6 +327,7 @@ export default function PatientInformationKiosk() {
                 name="weight"
                 value={formData.weight}
                 onChange={handleChange}
+                readOnly
               />
             </div>
           </div>
@@ -230,6 +340,7 @@ export default function PatientInformationKiosk() {
               onChange={handleChange}
               placeholder="Enter the patient's symptoms here..."
               className="resize-none h-24"
+              readOnly
             />
           </div>
         </div>
@@ -264,7 +375,7 @@ export default function PatientInformationKiosk() {
             <FaSave /> Save
           </Button>
           <Button
-            onClick={() => router.push("/patientdata")}
+            onClick={() => router.push(`/patientdata?id=${patientId}`)}
             className="flex items-center gap-2"
           >
             Next <FaChevronRight />
@@ -272,5 +383,19 @@ export default function PatientInformationKiosk() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PatientInformationKiosk() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white p-4 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+        </div>
+      }
+    >
+      <PatientInfoContent />
+    </Suspense>
   );
 }

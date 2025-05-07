@@ -106,9 +106,9 @@ export default function KioskDashboard() {
               onClick: () => router.push("/doctors"),
             },
             {
-              icon: <FaHeartbeat className="text-2xl text-red-600" />, // Changed to FaHeartbeat for medical info
-              text: t("dashboard.medical.info"), // Updated text
-              onClick: () => router.push("/medinfo"), // Adjusted route if needed
+              icon: <FaHeartbeat className="text-2xl text-red-600" />,
+              text: t("dashboard.medical.info"),
+              onClick: () => router.push("/medinfo"),
             },
             {
               icon: <FaPrint className="text-2xl text-purple-600" />,

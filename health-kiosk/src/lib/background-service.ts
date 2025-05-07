@@ -3,6 +3,7 @@ import { DataFilter } from "./data-filter";
 interface DriveFile {
   id: string;
   name: string;
+  createdTime: string; // Assuming createdTime is a string in ISO format
 }
 
 export class BackgroundService {
@@ -10,6 +11,7 @@ export class BackgroundService {
   private isRunning: boolean = false;
   private checkInterval: number = 60000; // Check every minute
   private lastCheckTime: string = new Date().toISOString();
+  private processedFileIds: Set<string> = new Set();
 
   constructor() {
     // Initialize only on client side
@@ -52,8 +54,28 @@ export class BackgroundService {
         }
         const files: DriveFile[] = await response.json();
 
+        console.log("Fetched files:", files);
+
         for (const file of files) {
+          if (this.processedFileIds.has(file.id)) {
+            console.log(
+              `Skipping file: ${file.name} (ID: ${file.id}) as it has already been processed.`
+            );
+            continue;
+          }
+
           try {
+            const fileUploadTime = new Date(file.createdTime).getTime(); // Use createdTime instead of file.id
+            const currentTime = Date.now();
+            const timeDifference = (currentTime - fileUploadTime) / 1000 / 60; // Convert to minutes
+
+            if (timeDifference > 1.2) {
+              console.log(
+                `Skipping file: ${file.name} (ID: ${file.id}) as it was uploaded more than 3 minutes ago.`
+              );
+              continue;
+            }
+
             console.log(`Processing file: ${file.name} (ID: ${file.id})`);
             const contentResponse = await fetch("/api/drive", {
               method: "POST",
@@ -67,9 +89,26 @@ export class BackgroundService {
               throw new Error("Failed to fetch file content");
             }
 
-            const { content } = await contentResponse.json();
-            await this.dataFilter.processCSV(content);
+            const { content, encoding } = await contentResponse.json();
+            let fileContent = content;
+            if (encoding === "base64") {
+              // Decode base64 to Uint8Array for Excel files
+              const binaryString =
+                typeof atob !== "undefined"
+                  ? atob(content)
+                  : Buffer.from(content, "base64").toString("binary");
+              const len = binaryString.length;
+              const bytes = new Uint8Array(len);
+              for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+              }
+              fileContent = bytes;
+            }
+            await this.dataFilter.processFile(fileContent, file.name);
             console.log(`Successfully processed file: ${file.name}`);
+
+            // Mark file as processed
+            this.processedFileIds.add(file.id);
           } catch (error) {
             console.error(`Error processing file ${file.name}:`, error);
           }

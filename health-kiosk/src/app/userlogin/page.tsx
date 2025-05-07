@@ -13,13 +13,13 @@ import { savePatientData } from "@/lib/patient-data";
 
 export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isPhoneLogin, setIsPhoneLogin] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [isPhoneLogin, setIsPhoneLogin] = useState(false); // Track if phone login is selected
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
 
   // Update the handleEmailAuth function to save patient data during signup
@@ -33,7 +33,7 @@ export default function AuthPage() {
 
     try {
       setIsLoading(true);
-      setError(null);
+      setError("");
 
       if (isSignUp) {
         // For signup, pass the source parameter
@@ -67,7 +67,7 @@ export default function AuthPage() {
         }
       }
     } catch (error: any) {
-      console.error("Email auth error:", error);
+      console.error("Authentication error:", error);
       setError(error.message || "Authentication failed. Please try again.");
     } finally {
       setIsLoading(false);
@@ -120,7 +120,7 @@ export default function AuthPage() {
             }`}
             onClick={() => {
               setIsSignUp(false);
-              setIsPhoneLogin(false); // Deactivate Phone login when Sign In is clicked
+              setIsPhoneLogin(false);
             }}
           >
             Sign In
@@ -135,7 +135,7 @@ export default function AuthPage() {
             }`}
             onClick={() => {
               setIsSignUp(true);
-              setIsPhoneLogin(false); // Deactivate Phone login when Sign Up is clicked
+              setIsPhoneLogin(false);
             }}
           >
             Sign Up
@@ -148,11 +148,18 @@ export default function AuthPage() {
                 ? "text-blue-600 border-b-2 border-blue-600"
                 : "text-gray-400"
             }`}
-            onClick={() => setIsPhoneLogin(!isPhoneLogin)} // Toggle Phone Login
+            onClick={() => setIsPhoneLogin(!isPhoneLogin)}
           >
             Phone
           </button>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
 
         {/* Form Container */}
         <div className="relative w-full min-h-[300px] flex items-center justify-center">
@@ -177,6 +184,7 @@ export default function AuthPage() {
                     placeholder="Enter your name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
+                    required
                   />
                 </div>
                 <div>
@@ -206,16 +214,16 @@ export default function AuthPage() {
                   />
                 </div>
                 <motion.button
-                  type="submit"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 text-lg transition disabled:opacity-70"
+                  className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 text-lg transition"
+                  type="submit"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Processing..." : "Sign Up"}
+                  {isLoading ? "Signing Up..." : "Sign Up"}
                 </motion.button>
               </motion.form>
-            ) : !isPhoneLogin ? ( // Render Email SignIn when phone login is not selected
+            ) : !isPhoneLogin ? (
               <motion.form
                 key="signin"
                 initial={{ opacity: 0, y: 20, scale: 0.9 }}
@@ -252,17 +260,16 @@ export default function AuthPage() {
                   />
                 </div>
                 <motion.button
-                  type="submit"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 text-lg transition disabled:opacity-70"
+                  className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 text-lg transition"
+                  type="submit"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Processing..." : "Sign In"}
+                  {isLoading ? "Signing In..." : "Sign In"}
                 </motion.button>
               </motion.form>
             ) : (
-              // Render Phone SignIn when phone login is selected
               <div className="absolute w-full space-y-5">
                 <div>
                   <label className="block text-lg font-medium text-gray-700">
@@ -283,27 +290,6 @@ export default function AuthPage() {
                     Send OTP
                   </motion.button>
                 </div>
-
-                {/* Hide OTP section */}
-                {/* <div>
-                  <label className="block text-lg font-medium text-gray-700">
-                    Enter OTP
-                  </label>
-                  <input
-                    type="text"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-400 text-lg"
-                    placeholder="Enter OTP"
-                  />
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 text-lg transition mt-4"
-                  >
-                    Verify OTP
-                  </motion.button>
-                </div> */}
               </div>
             )}
           </AnimatePresence>

@@ -54,6 +54,22 @@ export async function signUpWithEmail(
       throw error;
     }
 
+    // Create patient data with auth user's UID if user was created
+    if (data.user) {
+      const { error: patientError } = await supabase
+        .from("patient_data")
+        .insert({
+          auth_id: data.user.id, // Link to auth.users.id
+          email: email,
+        });
+
+      if (patientError) {
+        console.error("Error creating patient data:", patientError);
+        // Don't throw here as the auth user was created successfully
+        // Just log the error and continue
+      }
+    }
+
     return data;
   } catch (error) {
     console.error("Email sign-up error:", error);

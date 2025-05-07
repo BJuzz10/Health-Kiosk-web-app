@@ -12,25 +12,39 @@ export async function GET() {
   const filter = new DataFilter();
   for (const f of files) {
     const content = await monitor.getFileContent(f.id);
-    await filter.processCSV(content);
+    await filter.processFile(content, f.name);
     console.log(`Processed ${f.name}`);
   }
   return NextResponse.json({ processed: files.length });
 }
 
-export async function POST() {
-  if (backgroundService) {
-    backgroundService.stop();
-    backgroundService = null;
+export async function POST(request: Request) {
+  const body = await request.json();
+
+  // Handle stop request
+  if (body.action === "stop") {
+    if (backgroundService) {
+      backgroundService.stop();
+      backgroundService = null;
+      return NextResponse.json({
+        status: "stopped",
+        message: "Background service stopped",
+      });
+    }
     return NextResponse.json({
       status: "stopped",
-      message: "Background service stopped",
+      message: "No background service running",
     });
   }
-  return NextResponse.json({
-    status: "stopped",
-    message: "No background service running",
-  });
+
+  // Handle file processing request
+  if (body.content && body.filename) {
+    const filter = new DataFilter();
+    await filter.processFile(body.content, body.filename);
+    return NextResponse.json({ status: "processed" });
+  }
+
+  return NextResponse.json({ error: "Invalid request" }, { status: 400 });
 }
 
 // New status endpoint

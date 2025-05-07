@@ -97,6 +97,7 @@ const translations: Record<string, Record<string, string>> = {
     "admin.start.appointments": "Start Health Kiosk Appointments",
     "admin.patient.info": "Patient Information",
     "admin.ehr.clinic": "PPD Clinic (EHR)",
+    "admin.Settings": "Settings",
 
     // Medical Information
     "medinfo.title": "Medical Information",
@@ -150,6 +151,7 @@ const translations: Record<string, Record<string, string>> = {
     "admin.start.appointments": "Simulan ang Health Kiosk Appointment",
     "admin.patient.info": "Impormasyon ng Pasyente",
     "admin.ehr.clinic": "PPD Clinic (EHR)",
+    "admin.Settings": "Mga Setting",
 
     // Medical Information
     "medinfo.title": "Medikal na Impormasyon",

@@ -1,15 +1,17 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type React from "react";
+import { Suspense } from "react";
+import { saveAs } from "file-saver";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { FaChevronLeft } from "react-icons/fa";
 import {
   FaHospital,
   FaFileDownload,
   FaCamera,
   FaHistory,
-  FaUpload,
+  FaVideo,
 } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -20,15 +22,134 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { createClient } from "@/utils/supabase/client";
+import PrescriptionUpload from "@/components/prescription-upload";
 
-export default function KioskDashboard() {
+const supabase = createClient();
+
+// Create a separate component for the main content that uses useSearchParams
+function PatientDataContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const patientIdParam = searchParams.get("id");
   const [isEnglish, setIsEnglish] = useState(false);
   const [currentTime, setCurrentTime] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState<string | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showMeetLinkModal, setShowMeetLinkModal] = useState(false);
+  const [meetLink, setMeetLink] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isValidPatient, setIsValidPatient] = useState(false);
+  const [consultationStatus, setConsultationStatus] = useState<{
+    hasPending: boolean;
+    hasApproved: boolean;
+    meetLink: string | null;
+    consultationId: string | null;
+  }>({
+    hasPending: false,
+    hasApproved: false,
+    meetLink: null,
+    consultationId: null,
+  });
+
+  // Validate patient ID
+  useEffect(() => {
+    const validatePatient = async () => {
+      if (!patientIdParam) {
+        router.push("/appointment");
+        return;
+      }
+
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("patient_data")
+          .select("id")
+          .eq("id", patientIdParam)
+          .single();
+
+        if (error || !data) {
+          console.error("Invalid patient ID:", error);
+          router.push("/appointment");
+          return;
+        }
+
+        setIsValidPatient(true);
+      } catch (err) {
+        console.error("Error validating patient:", err);
+        router.push("/appointment");
+      }
+    };
+
+    validatePatient();
+  }, [patientIdParam, router]);
+
+  // Redirect if no patient ID
+  useEffect(() => {
+    if (!patientIdParam) {
+      router.push("/appointment");
+      return;
+    }
+  }, [patientIdParam, router]);
+
+  // Fetch consultation status using internal patient ID
+  useEffect(() => {
+    const fetchConsultationStatus = async () => {
+      if (!patientIdParam) return; // Add this check
+
+      try {
+        // Get the most recent consultation for this patient
+        const { data, error } = await supabase
+          .from("consultations")
+          .select("*")
+          .eq("patient_id", patientIdParam) // Use internal ID
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error) {
+          console.error("Error fetching consultation:", error);
+          return;
+        }
+
+        if (data) {
+          setConsultationStatus({
+            hasPending: data.status === "pending",
+            hasApproved: data.status === "approved" && !!data.meet_link,
+            meetLink: data.meet_link,
+            consultationId: data.id,
+          });
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    };
+
+    fetchConsultationStatus();
+
+    // Set up real-time subscription for consultation updates
+    const subscription = supabase
+      .channel("consultations_channel")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "consultations",
+          filter: `patient_id=eq.${patientIdParam}`, // Add filter for specific patient
+        },
+        () => {
+          fetchConsultationStatus();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [patientIdParam]); // Add patientId dependency
 
   // Update time every second, but only on the client
   useEffect(() => {
@@ -58,6 +179,110 @@ export default function KioskDashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  const handleJoinMeet = () => {
+    if (consultationStatus.hasApproved && consultationStatus.meetLink) {
+      window.open(consultationStatus.meetLink, "_blank");
+    } else {
+      setShowMeetLinkModal(true);
+    }
+  };
+
+  const handleSubmitMeetLink = async () => {
+    if (!meetLink || !consultationStatus.consultationId) return;
+
+    setIsSubmitting(true);
+
+    try {
+      // Update the consultation with the meet link
+      const { error } = await supabase
+        .from("consultations")
+        .update({
+          meet_link: meetLink,
+          status: "approved",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", consultationStatus.consultationId);
+
+      if (error) {
+        console.error("Error updating consultation:", error);
+        alert("Failed to add meeting link. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Update local state
+      setConsultationStatus({
+        ...consultationStatus,
+        hasPending: false,
+        hasApproved: true,
+        meetLink: meetLink,
+      });
+
+      // Close modal and reset state
+      setShowMeetLinkModal(false);
+      setMeetLink("");
+      alert("Meeting link has been added successfully!");
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An unexpected error occurred.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDownloadCSV = async () => {
+    try {
+      const patientId = searchParams.get("id");
+      if (!patientId) {
+        alert("Patient ID is missing.");
+        return;
+      }
+
+      // Fetch patient data
+      const { data: patientData, error: patientError } = await supabase
+        .from("patient_data")
+        .select("name, email, sex, birthday, address, contact")
+        .eq("id", patientId)
+        .single();
+
+      if (patientError || !patientData) {
+        console.error("Error fetching patient data:", patientError);
+        alert("Failed to fetch patient data.");
+        return;
+      }
+
+      // Fetch vital measurements data
+      const { data: vitalData, error: vitalError } = await supabase
+        .from("vital_measurements")
+        .select("checkup_id, patient_id, type, value, unit")
+        .eq("patient_id", patientId);
+
+      if (vitalError || !vitalData) {
+        console.error("Error fetching vital measurements:", vitalError);
+        alert("Failed to fetch vital measurements.");
+        return;
+      }
+
+      // Combine data into a single CSV
+      const csvData = [
+        "Patient Data",
+        Object.keys(patientData).join(","),
+        Object.values(patientData).join(","),
+        "",
+        "Vital Measurements",
+        Object.keys(vitalData[0] || {}).join(","),
+        ...vitalData.map((vital) => Object.values(vital).join(",")),
+      ].join("\n");
+
+      // Create a Blob and download the CSV
+      const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
+      saveAs(blob, `patient_${patientId}_data.csv`);
+    } catch (error) {
+      console.error("Error generating CSV:", error);
+      alert("An unexpected error occurred while generating the CSV.");
+    }
+  };
+
   const translations = {
     joinMeetNow: isEnglish
       ? "Join Meet Now (ONLINE)"
@@ -80,23 +305,40 @@ export default function KioskDashboard() {
     fileSelected: isEnglish ? "File Selected" : "Napiling File",
     noFileSelected: isEnglish ? "No file selected" : "Walang napiling file",
     Backbutton: isEnglish ? "Back" : "Bumalik",
+    addMeetLink: isEnglish
+      ? "Add Google Meet Link"
+      : "Magdagdag ng Google Meet Link",
+    meetLinkPlaceholder: isEnglish
+      ? "Enter Google Meet link here"
+      : "Ilagay ang Google Meet link dito",
+    submit: isEnglish ? "Submit" : "Ipasa",
+    cancel: isEnglish ? "Cancel" : "Kanselahin",
+    meetLinkInstructions: isEnglish
+      ? "Please create a Google Meet link and paste it below:"
+      : "Mangyaring gumawa ng Google Meet link at i-paste ito sa ibaba:",
+    meetPending: isEnglish
+      ? "Your consultation request is pending. The doctor will provide a meeting link soon."
+      : "Ang iyong kahilingan sa konsultasyon ay nakabinbin. Magbibigay ang doktor ng link sa miting sa lalong madaling panahon.",
+    meetReady: isEnglish
+      ? "Your consultation is ready! Click to join the meeting."
+      : "Handa na ang iyong konsultasyon! I-click upang sumali sa miting.",
+    noMeetYet: isEnglish
+      ? "No consultation has been requested yet."
+      : "Wala pang hiniling na konsultasyon.",
+    close: isEnglish ? "Close" : "Isara",
+    prescriptionHistory: isEnglish
+      ? "Prescription History"
+      : "Kasaysayan ng mga Reseta",
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setSelectedFile(e.target.files[0]);
-    }
-  };
-
-  const handleUpload = () => {
-    // Here you would implement the actual file upload logic
-    if (selectedFile) {
-      console.log("Uploading file:", selectedFile.name);
-      // After successful upload, close the modal and reset the selected file
-      setIsUploadModalOpen(false);
-      setSelectedFile(null);
-    }
-  };
+  // Only render content if we have a valid patient
+  if (!isValidPatient) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white flex flex-col items-center p-4">
@@ -106,7 +348,7 @@ export default function KioskDashboard() {
         <div className="flex flex-col sm:flex-row items-center justify-between w-full mb-4">
           <Button
             variant="outline"
-            onClick={() => router.push("/patientinfo")}
+            onClick={() => router.push("/admindash")}
             className="flex items-center gap-2"
           >
             <FaChevronLeft /> {translations.Backbutton}
@@ -133,39 +375,55 @@ export default function KioskDashboard() {
 
         {/* Buttons Section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
-          {[
-            {
-              icon: <FaHospital className="text-2xl text-purple-600" />,
-              text: translations.joinMeetNow,
-              onClick: () => router.push("/meet"),
-            },
-            {
-              icon: <FaFileDownload className="text-2xl text-green-600" />,
-              text: translations.downloadPatientInfo,
-              onClick: () => router.push("/download-csv"),
-            },
-            {
-              icon: <FaCamera className="text-2xl text-indigo-600" />,
-              text: translations.uploadPrescription,
-              onClick: () => setIsUploadModalOpen(true),
-            },
-            {
-              icon: <FaHistory className="text-2xl text-yellow-600" />,
-              text: translations.showPrescriptionHistory,
-              onClick: () => router.push("/pastprescript"),
-            },
-          ].map((item, index) => (
-            <Card
-              key={index}
-              className="w-full flex flex-col items-center justify-center gap-4 p-5 sm:p-6 rounded-2xl shadow-md transition-all duration-200 hover:scale-105 cursor-pointer bg-white text-center"
-              onClick={item.onClick}
-            >
-              {item.icon}
-              <span className="text-lg sm:text-xl font-semibold">
-                {item.text}
-              </span>
-            </Card>
-          ))}
+          {/* Join Meet Button with Notification Dot */}
+          <Card
+            className="w-full flex flex-col items-center justify-center gap-4 p-5 sm:p-6 rounded-2xl shadow-md transition-all duration-200 hover:scale-105 cursor-pointer bg-white text-center relative"
+            onClick={handleJoinMeet}
+          >
+            <div className="relative">
+              <FaHospital className="text-2xl text-purple-600" />
+              {consultationStatus.hasPending && (
+                <span className="absolute -top-2 -right-2 w-3 h-3 bg-red-500 rounded-full"></span>
+              )}
+              {consultationStatus.hasApproved && (
+                <span className="absolute -top-2 -right-2 w-3 h-3 bg-green-500 rounded-full"></span>
+              )}
+            </div>
+            <span className="text-lg sm:text-xl font-semibold">
+              {translations.joinMeetNow}
+            </span>
+          </Card>
+
+          {/* Other buttons */}
+          <Card
+            className="w-full flex flex-col items-center justify-center gap-4 p-5 sm:p-6 rounded-2xl shadow-md transition-all duration-200 hover:scale-105 cursor-pointer bg-white text-center"
+            onClick={handleDownloadCSV}
+          >
+            <FaFileDownload className="text-2xl text-green-600" />
+            <span className="text-lg sm:text-xl font-semibold">
+              {translations.downloadPatientInfo}
+            </span>
+          </Card>
+
+          <Card
+            className="w-full flex flex-col items-center justify-center gap-4 p-5 sm:p-6 rounded-2xl shadow-md transition-all duration-200 hover:scale-105 cursor-pointer bg-white text-center"
+            onClick={() => setIsUploadModalOpen(true)}
+          >
+            <FaCamera className="text-2xl text-indigo-600" />
+            <span className="text-lg sm:text-xl font-semibold">
+              {translations.uploadPrescription}
+            </span>
+          </Card>
+
+          <Card
+            className="w-full flex flex-col items-center justify-center gap-4 p-5 sm:p-6 rounded-2xl shadow-md transition-all duration-200 hover:scale-105 cursor-pointer bg-white text-center"
+            onClick={() => router.push(`/pastprescript?id=${patientIdParam}`)}
+          >
+            <FaHistory className="text-2xl text-yellow-600" />
+            <span className="text-lg sm:text-xl font-semibold">
+              {translations.showPrescriptionHistory}
+            </span>
+          </Card>
         </div>
 
         {/* Footer */}
@@ -183,57 +441,127 @@ export default function KioskDashboard() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex flex-col items-center space-y-6 py-4">
-            <div className="w-full border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-                id="prescription-file"
-              />
+          {patientIdParam && ( // Only render if we have a patient ID
+            <PrescriptionUpload
+              patientId={patientIdParam}
+              onSuccess={() => {
+                setTimeout(() => setIsUploadModalOpen(false), 2000);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
-              {selectedFile ? (
-                <div className="flex flex-col items-center gap-2">
-                  <FaUpload className="text-4xl text-green-500 mb-2" />
-                  <p className="font-medium">{translations.fileSelected}:</p>
-                  <p className="text-sm text-gray-600 break-all">
-                    {selectedFile.name}
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-2">
-                  <FaUpload className="text-4xl text-gray-400 mb-2" />
-                  <p className="text-gray-500">{translations.noFileSelected}</p>
-                </div>
-              )}
+      {/* Meet Link Modal */}
+      <Dialog open={showMeetLinkModal} onOpenChange={setShowMeetLinkModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">
+              {consultationStatus.hasApproved
+                ? "Join Consultation"
+                : "Consultation Status"}
+            </DialogTitle>
+          </DialogHeader>
 
-              <div className="mt-4 flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="py-6">
+            {consultationStatus.hasPending && (
+              <Alert className="bg-yellow-50 border-yellow-200">
+                <FaVideo className="h-5 w-5 text-yellow-600" />
+                <AlertTitle className="text-yellow-800 font-medium">
+                  Consultation Pending
+                </AlertTitle>
+                <AlertDescription className="text-yellow-700">
+                  {translations.meetPending}
+                </AlertDescription>
+
+                {/* Doctor interface to add meet link */}
+                <div className="mt-4 pt-4 w-full border-yellow-200 items-center">
+                  <div className="w-95 text-yellow-800 mb-2 justify-center flex flex-col items-center">
+                    <span>{translations.meetLinkInstructions}</span>
+                  </div>
+                  <div className="pl-14 flex-col items-center justify-center mb-4">
+                    <Input
+                      placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                      value={meetLink}
+                      onChange={(e) => setMeetLink(e.target.value)}
+                      className="mb-2 w-65 "
+                    />
+                  </div>
+                  <div className="pl-24">
+                    <Button
+                      className="w-45 bg-yellow-600 hover:bg-yellow-700 text-white"
+                      onClick={handleSubmitMeetLink}
+                      disabled={!meetLink || isSubmitting}
+                    >
+                      {isSubmitting ? "Sending..." : translations.submit}
+                    </Button>
+                  </div>
+                </div>
+              </Alert>
+            )}
+
+            {consultationStatus.hasApproved && (
+              <Alert className="bg-green-50 border-green-200">
+                <FaVideo className="h-5 w-5 text-green-600" />
+                <AlertTitle className="text-green-800 font-medium">
+                  Consultation Ready
+                </AlertTitle>
+                <AlertDescription className="text-green-700">
+                  {translations.meetReady}
+                </AlertDescription>
                 <Button
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2"
+                  className="w-full mt-4 bg-green-600 hover:bg-green-700"
+                  onClick={() => {
+                    if (consultationStatus.meetLink) {
+                      window.open(consultationStatus.meetLink, "_blank");
+                      setShowMeetLinkModal(false);
+                    }
+                  }}
                 >
-                  <FaUpload className="text-sm" />
-                  {translations.selectFile}
+                  Join Meeting
                 </Button>
-              </div>
-            </div>
+              </Alert>
+            )}
+
+            {!consultationStatus.hasPending &&
+              !consultationStatus.hasApproved && (
+                <Alert className="bg-gray-50 border-gray-200">
+                  <FaVideo className="h-5 w-5 text-gray-600" />
+                  <AlertTitle className="text-gray-800 font-medium">
+                    No Active Consultation
+                  </AlertTitle>
+                  <AlertDescription className="text-gray-700">
+                    {translations.noMeetYet}
+                  </AlertDescription>
+                </Alert>
+              )}
           </div>
 
           <DialogFooter>
             <Button
-              onClick={handleUpload}
-              disabled={!selectedFile}
-              className="flex items-center gap-2"
+              variant="outline"
+              onClick={() => setShowMeetLinkModal(false)}
             >
-              <FaUpload className="text-sm" />
-              {translations.upload}
+              {translations.close}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function PatientDataPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white flex items-center justify-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+        </div>
+      }
+    >
+      <PatientDataContent />
+    </Suspense>
   );
 }
