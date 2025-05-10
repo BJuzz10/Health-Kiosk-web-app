@@ -48,7 +48,7 @@ export async function middleware(request: NextRequest) {
     "/userlogin",
     "/adminlogin",
     "/about",
-    "/contact",
+    "/contacts",
     "/language-select",
     "/form",
   ];
