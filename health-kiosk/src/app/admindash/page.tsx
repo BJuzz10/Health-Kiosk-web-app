@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import {
   FaUser,
   FaBriefcaseMedical,
-  FaUsers,
   FaHospital,
   FaSignOutAlt,
   FaKey,
@@ -190,7 +189,7 @@ export default function DoctorsHomePage() {
         </h1>
 
         {/* Buttons Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8">
+        <div className="grid grid-cols-1  gap-6 mt-8">
           {[
             {
               icon: <FaUser className="text-2xl text-blue-600" />,
@@ -201,11 +200,6 @@ export default function DoctorsHomePage() {
               icon: <FaBriefcaseMedical className="text-2xl text-green-600" />,
               text: t("admin.start.appointments"),
               onClick: () => router.push("/appointment"),
-            },
-            {
-              icon: <FaUsers className="text-2xl text-indigo-600" />,
-              text: t("admin.patient.info"),
-              onClick: () => router.push("/patientinfo"),
             },
             {
               icon: <FaHospital className="text-2xl text-purple-600" />,
