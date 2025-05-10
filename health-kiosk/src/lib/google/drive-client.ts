@@ -42,6 +42,6 @@ export async function getDriveClient(): Promise<drive_v3.Drive | null> {
         stack: error.stack,
       });
     }
-    return null;
+    throw error; // Pass the error to the calling function
   }
 }

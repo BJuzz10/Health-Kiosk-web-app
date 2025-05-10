@@ -20,7 +20,7 @@ export default function AuthPage() {
 
   // Update the handleGoogleSignIn function to include the source parameter
 
-  // Update the handleEmailAuth function to ensure direct redirection to admindash
+  // Update the handleEmailAuth function to validate user_type
   const handleEmailAuth = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -29,26 +29,55 @@ export default function AuthPage() {
       return;
     }
 
+    if (isSignUp && !fullName) {
+      setError("Full name is required for signup");
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
 
       if (isSignUp) {
-        // For signup, pass the source parameter
-        await signUpWithEmail(email, password, "adminlogin");
-        // Show success message for sign up
-        setError("Check your email for a confirmation link!");
-      } else {
-        const { user } = await signInWithEmail(email, password);
-        if (user) {
-          // Always redirect to admindash from adminlogin page
-          console.log("Admin login successful, redirecting to /admindash");
+        const { user_type } = await signUpWithEmail(
+          email,
+          password,
+          "adminlogin",
+          fullName
+        );
 
-          // Add a small delay to ensure the session is properly set
-          setTimeout(() => {
-            router.push("/admindash");
-          }, 100);
+        if (user_type !== "doctor") {
+          setError(
+            "This signup page is only for doctors. Please use the patient signup page."
+          );
+          return;
         }
+
+        // Show success message and clear form
+        setError("Check your email for a confirmation link!");
+        setEmail("");
+        setPassword("");
+        setFullName("");
+      } else {
+        const { user, user_type } = await signInWithEmail(email, password);
+
+        if (!user) {
+          setError("Invalid credentials");
+          return;
+        }
+
+        // Verify this is a doctor account
+        if (user_type !== "doctor") {
+          setError(
+            "This login is only for doctors. Please use the patient login page."
+          );
+          return;
+        }
+
+        // Add a small delay to ensure the session is properly set
+        setTimeout(() => {
+          router.push("/admindash");
+        }, 100);
       }
     } catch (error: any) {
       console.error("Email auth error:", error);

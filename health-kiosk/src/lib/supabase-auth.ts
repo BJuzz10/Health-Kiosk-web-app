@@ -16,7 +16,17 @@ export async function signInWithEmail(email: string, password: string) {
       throw error;
     }
 
-    return data;
+    if (!data.user) {
+      throw new Error("No user data returned");
+    }
+
+    // Get user type from the user metadata
+    const userType = data.user.user_metadata?.user_type;
+
+    return {
+      ...data,
+      user_type: userType,
+    };
   } catch (error) {
     console.error("Email sign-in error:", error);
     throw error;
@@ -27,7 +37,8 @@ export async function signInWithEmail(email: string, password: string) {
 export async function signUpWithEmail(
   email: string,
   password: string,
-  source?: string
+  source?: string,
+  fullName?: string
 ) {
   try {
     // Get the base URL from the environment or window location
@@ -41,11 +52,22 @@ export async function signUpWithEmail(
       redirectUrl += `?source=${source}`;
     }
 
+    // Determine user type based on source
+    const userType = source === "adminlogin" ? "doctor" : "patient";
+
+    // Create the auth user with metadata
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
+        data: {
+          user_type: userType,
+          name: fullName || "",
+          email: email,
+          email_verified: false,
+          phone_verified: false,
+        },
       },
     });
 
@@ -54,23 +76,11 @@ export async function signUpWithEmail(
       throw error;
     }
 
-    // Create patient data with auth user's UID if user was created
-    if (data.user) {
-      const { error: patientError } = await supabase
-        .from("patient_data")
-        .insert({
-          auth_id: data.user.id, // Link to auth.users.id
-          email: email,
-        });
-
-      if (patientError) {
-        console.error("Error creating patient data:", patientError);
-        // Don't throw here as the auth user was created successfully
-        // Just log the error and continue
-      }
-    }
-
-    return data;
+    // Return with user type
+    return {
+      ...data,
+      user_type: userType,
+    };
   } catch (error) {
     console.error("Email sign-up error:", error);
     throw error;

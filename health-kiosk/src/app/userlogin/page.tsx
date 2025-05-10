@@ -22,7 +22,7 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  // Update the handleEmailAuth function to save patient data during signup
+  // Update the handleEmailAuth function to validate user_type
   const handleEmailAuth = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -36,11 +36,22 @@ export default function AuthPage() {
       setError("");
 
       if (isSignUp) {
-        // For signup, pass the source parameter
-        const { user } = await signUpWithEmail(email, password, "userlogin");
+        const { user, user_type } = await signUpWithEmail(
+          email,
+          password,
+          "userlogin",
+          fullName
+        );
+
+        if (user_type !== "patient") {
+          setError(
+            "This signup page is only for patients. Please use the doctor signup page."
+          );
+          return;
+        }
 
         // Save the user's name and email to patient_data table
-        if (user && fullName) {
+        if (user) {
           await savePatientData({
             email: email,
             name: fullName,
@@ -49,22 +60,27 @@ export default function AuthPage() {
             contact: null,
           });
         }
-
-        // Show success message for sign up
-        setError("Check your email for a confirmation link!");
       } else {
-        const { user } = await signInWithEmail(email, password);
-        if (user) {
-          // Check if user has complete patient data
-          const hasData = await hasCompletePatientData(user.email!);
+        const { user, user_type } = await signInWithEmail(email, password);
 
-          // Redirect based on data existence
-          if (user.email?.includes("admin") || user.email?.includes("doctor")) {
-            router.push("/admindash");
-          } else {
-            router.push(hasData ? "/dashboard" : "/user");
-          }
+        if (!user) {
+          setError("Invalid credentials");
+          return;
         }
+
+        // Verify this is a patient account
+        if (user_type !== "patient") {
+          setError(
+            "This login is only for patients. Please use the doctor login page."
+          );
+          return;
+        }
+
+        // Check if user has complete patient data
+        const hasData = await hasCompletePatientData(user.email!);
+
+        // Redirect based on data existence
+        router.push(hasData ? "/dashboard" : "/user");
       }
     } catch (error: any) {
       console.error("Authentication error:", error);

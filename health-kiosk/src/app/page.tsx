@@ -87,6 +87,8 @@ export default function HealthcareKiosk() {
                     width={500}
                     height={350}
                     className="w-full h-[350px] object-cover rounded-none"
+                    priority
+                    style={{ width: "auto", height: "auto" }}
                   />
 
                   <p className="text-center mt-4 text-gray-600 text-sm md:text-base">

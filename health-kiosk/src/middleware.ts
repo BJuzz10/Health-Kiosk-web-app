@@ -40,6 +40,7 @@ export async function middleware(request: NextRequest) {
 
   // Get the current path
   const path = request.nextUrl.pathname;
+  const { pathname } = request.nextUrl;
 
   // Public routes that don't require authentication
   const publicRoutes = [
@@ -51,19 +52,46 @@ export async function middleware(request: NextRequest) {
     "/language-select",
     "/form",
   ];
+  const isStaticFile = pathname.match(/\.(.*)$/);
 
   // If it's a public route, allow access
-  if (publicRoutes.includes(path)) {
+  if (!user && (isStaticFile || publicRoutes.includes(path))) {
     return response;
   }
 
   // If user is not authenticated and trying to access protected routes
   if (!user) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/";
-    redirectUrl.searchParams.set("redirectedFrom", path);
-    return NextResponse.redirect(redirectUrl);
+    if (!publicRoutes.includes(path)) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/";
+      redirectUrl.searchParams.set("redirectedFrom", path);
+      return NextResponse.redirect(redirectUrl);
+    }
+    return response; // Allow access to public routes
   }
+
+  // If user is authenticated, always redirect them away from public routes
+  if (user && publicRoutes.includes(path)) {
+    const userType = user.user_metadata?.user_type;
+
+    if (userType === "doctor") {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/admindash"; // Redirect doctors to admin dashboard
+      return NextResponse.redirect(redirectUrl);
+    } else if (userType === "patient") {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/dashboard"; // Redirect patients to user dashboard
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
+  // Add headers to prevent caching of responses
+  response.headers.set(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate"
+  );
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
 
   return response;
 }
