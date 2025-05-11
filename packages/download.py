@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 
 down = Blueprint('download', __name__)
-FILTER_CSV_ENDPOINT = "http://localhost:10000/filter_csv"  # Update if needed
+FILTER_CSV_ENDPOINT = "https://health-kiosk-web-app-rrbq.onrender.com/filter_csv" #"http://localhost:10000/filter_csv"  # Update if needed
 
 @down.route('/download', methods=['POST'])
 def download_file():
