@@ -8,9 +8,11 @@ def filter_backend():
     app.config['SESSION_PERMANENT'] = True 
 
     from .log import log
-    from .filt import filt 
+    from .filt import filt
+    from .download import down
 
     app.register_blueprint(log)
     app.register_blueprint(filt)
+    app.register_blueprint(down)
 
     return app 

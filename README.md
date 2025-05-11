@@ -5,11 +5,7 @@ python Healthtreefilter.py
 ``` 
 # cmd command lines for filtering data
 ```bash
-#for locking in time of user log in:
-curl -c cookies.txt -X POST https://health-kiosk-web-app-rrbq.onrender.com/logtime -d "user_id=234"
-
-#for filtering out exported csv file:
-curl -b cookies.txt -X POST https://health-kiosk-web-app-rrbq.onrender.com/filter_csv -F "file=@DataRecord_xxxxxxxxx.xls"
+curl -X POST http://localhost:10000/download -H "Content-Type: application/json" -d "{\"link\": \"https://docs.google.com/spreadsheets/d/1WSihyvVi0OAwuW_Q--yHgUg4UgG-cpjc/edit?usp=sharing^&ouid=107580692425249955357^&rtpof=true^&sd=true\"}"
 ```
 - for testing purposes cd your cmd to where the csv file is located first
 - user_id will be the user's id number based from the frontend of the web app, but for testing purposes the number can be random
