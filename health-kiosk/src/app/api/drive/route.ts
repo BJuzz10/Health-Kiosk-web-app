@@ -63,7 +63,7 @@ export async function POST(request: Request) {
         },
         { responseType: "text" }
       );
-      return NextResponse.json({ content: response.data, encoding: "utf8" });
+      return NextResponse.json({ content: response.data });
     }
   } catch (error) {
     console.error("Error fetching file content:", error);
