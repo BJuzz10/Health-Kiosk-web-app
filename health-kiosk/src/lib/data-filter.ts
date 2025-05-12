@@ -366,15 +366,17 @@ export class DataFilter {
 
   private async processHealthTreeData(
     responseData: {
-      filtered_data: Array<{
-        ID: string | number;
-        "SPO2(%)": string | number;
-        "PR(bpm)": string | number;
-      }>;
+      filter_csv_response: {
+        filtered_data: Array<{
+          ID: string | number;
+          "SPO2(%)": string | number;
+          "PR(bpm)": string | number;
+        }>;
+      };
     },
     patientId: string
   ): Promise<VitalMeasurement[]> {
-    const records = responseData.filtered_data;
+    const records = responseData.filter_csv_response.filtered_data;
 
     if (!Array.isArray(records) || records.length === 0) {
       throw new Error("No records found in HealthTree data");
