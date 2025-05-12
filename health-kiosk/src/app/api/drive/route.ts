@@ -51,25 +51,9 @@ export async function POST(request: Request) {
 
     // Detect file type by extension
     if (filename && isExcelFile(filename)) {
-      // Fetch as binary stream for Excel files
-      const response = await drive.files.get(
-        {
-          fileId,
-          alt: "media",
-        },
-        { responseType: "stream" }
-      );
-      // Collect the stream into a Buffer
-      const chunks = [];
-      for await (const chunk of response.data) {
-        chunks.push(chunk);
-      }
-      const buffer = Buffer.concat(chunks);
-      // Return as base64 string (JSON-safe)
-      return NextResponse.json({
-        content: buffer.toString("base64"),
-        encoding: "base64",
-      });
+      // Return the drive link for Excel files
+      const driveLink = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+      return NextResponse.json({ link: driveLink });
     } else {
       // Fetch as text for CSV or unknown
       const response = await drive.files.get(
