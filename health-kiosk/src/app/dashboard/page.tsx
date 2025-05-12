@@ -12,6 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useLanguage } from "@/context/LanguageContext";
 import { signOut } from "@/lib/supabase-auth";
+import { createClient } from "@/utils/supabase/client";
+import { getCurrentUser } from "@/lib/supabase-auth";
+
+const supabase = createClient();
 
 export default function KioskDashboard() {
   const router = useRouter();
@@ -19,6 +23,7 @@ export default function KioskDashboard() {
   const [currentTime, setCurrentTime] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [errorMessage, setError] = useState<string | null>(null);
 
   // Update time every second, but only on the client
   useEffect(() => {
@@ -54,8 +59,29 @@ export default function KioskDashboard() {
   };
   const handleLogout = async () => {
     try {
+      const user = await getCurrentUser();
       await signOut();
       router.push("/");
+      if (!user || !user.email) {
+        console.error("User is null or email is missing.");
+        return;
+      }
+
+      const { error } = await supabase.from("patient_data").upsert(
+        {
+          email: user.email,
+          active_status: "offline",
+        },
+        { onConflict: "email" }
+      );
+
+      if (error) {
+        console.error("Upsert error:", error);
+        setError(
+          "Failed to update patient data. Please try again." + errorMessage
+        );
+        return;
+      }
     } catch (error) {
       console.error("Error signing out:", error);
     }
