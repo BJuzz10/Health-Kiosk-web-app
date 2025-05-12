@@ -295,12 +295,18 @@ export class DataFilter {
   public async processFile(
     fileContent: ArrayBuffer | string,
     filename: string,
-    link: string // Make link required
+    link?: string // Make link optional
   ): Promise<void> {
     try {
       const deviceType = this.determineFilterType(filename);
 
       if (deviceType === "healthtree") {
+        if (!link) {
+          throw new Error(
+            "Drive file link is required for processing HealthTree data"
+          );
+        }
+
         const response = await fetch(
           "https://health-kiosk-web-app-rrbq.onrender.com/download",
           {
