@@ -10,6 +10,9 @@ import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { savePatientData } from "@/lib/patient-data";
+import { createClient } from "@/utils/supabase/client";
+
+const supabase = createClient();
 
 export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -73,6 +76,20 @@ export default function AuthPage() {
           setError(
             "This login is only for patients. Please use the doctor login page."
           );
+          return;
+        }
+
+        const { error } = await supabase.from("patient_data").upsert(
+          {
+            email: user.email,
+            active_status: "online",
+          },
+          { onConflict: "email" }
+        );
+
+        if (error) {
+          console.error("Upsert error:", error);
+          setError("Failed to update patient data. Please try again.");
           return;
         }
 
