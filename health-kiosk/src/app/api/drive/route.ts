@@ -55,6 +55,7 @@ export async function POST(request: Request) {
     if (isExcelFile(filename)) {
       // Return the drive link for Excel files
       const driveLink = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+      console.log("Returning drive link for Excel file:", driveLink);
       return NextResponse.json({ link: driveLink });
     } else {
       // Fetch as text for CSV or unknown
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
         },
         { responseType: "text" }
       );
-      return NextResponse.json({ content: response.data });
+      return NextResponse.json({ content: response.data, encoding: "utf8" });
     }
   } catch (error) {
     console.error("Error fetching file content:", error);
