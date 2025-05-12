@@ -90,7 +90,9 @@ export class BackgroundService {
               throw new Error("Failed to fetch file content");
             }
 
-            const { content, encoding, link } = await contentResponse.json(); // Include link in the response
+            const responseData = await contentResponse.json();
+            console.log("Fetched response data:", responseData);
+            const { content, encoding, link } = responseData; // Include link in the response
             let fileContent = content;
             if (encoding === "base64") {
               // Decode base64 to Uint8Array for Excel files
