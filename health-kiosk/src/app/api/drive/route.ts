@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     }
 
     // Detect file type by extension
-    if (filename && isExcelFile(filename)) {
+    if (isExcelFile(filename)) {
       // Return the drive link for Excel files
       const driveLink = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
       return NextResponse.json({ link: driveLink });
