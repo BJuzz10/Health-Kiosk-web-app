@@ -33,14 +33,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const rawBody = await request.text();
-    console.log("Raw request body:", rawBody);
-
-    // Parse the raw body to check the filename
-    const { fileId, filename } = JSON.parse(rawBody);
-    console.log("Parsed fileId:", fileId);
-    console.log("Parsed filename:", filename);
-
+    const { fileId, filename } = await request.json();
     if (!fileId) {
       return NextResponse.json(
         { error: "File ID is required" },
@@ -48,15 +41,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if the file is an Excel file (HealthTree)
-    if (isExcelFile(filename)) {
-      // Return the drive link for Excel files
-      const driveLink = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
-      console.log("Returning drive link for Excel file:", driveLink);
-      return NextResponse.json({ link: driveLink });
-    }
-
-    // For Beurer and Omron files, process as JSON
     const drive = await getDriveClient();
     if (!drive) {
       return NextResponse.json(
@@ -65,21 +49,26 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log("Processing as non-Excel file:", filename);
-
-    // Fetch as text for CSV only
-    const response = await drive.files.get(
-      {
-        fileId,
-        alt: "media",
-      },
-      { responseType: "text" }
-    );
-    return NextResponse.json({ content: response.data, encoding: "utf8" });
+    // Detect file type by extension
+    if (filename && isExcelFile(filename)) {
+      // Return the drive link for Excel files
+      const driveLink = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+      return NextResponse.json({ link: driveLink });
+    } else {
+      // Fetch as text for CSV or unknown
+      const response = await drive.files.get(
+        {
+          fileId,
+          alt: "media",
+        },
+        { responseType: "text" }
+      );
+      return NextResponse.json({ content: response.data, encoding: "utf8" });
+    }
   } catch (error) {
-    console.error("Error processing request:", error);
+    console.error("Error fetching file content:", error);
     return NextResponse.json(
-      { error: "Failed to process request" },
+      { error: "Failed to fetch file content" },
       { status: 500 }
     );
   }
