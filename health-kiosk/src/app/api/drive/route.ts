@@ -33,9 +33,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { fileId, filename } = await request.json();
-    console.log("Received fileId:", fileId);
-    console.log("Received filename:", filename);
+    const rawBody = await request.text();
+    console.log("Raw request body:", rawBody);
+
+    // Parse the raw body to check the filename
+    const { fileId, filename } = JSON.parse(rawBody);
+    console.log("Parsed fileId:", fileId);
+    console.log("Parsed filename:", filename);
+
     if (!fileId) {
       return NextResponse.json(
         { error: "File ID is required" },
@@ -43,6 +48,15 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check if the file is an Excel file (HealthTree)
+    if (isExcelFile(filename)) {
+      // Return the drive link for Excel files
+      const driveLink = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+      console.log("Returning drive link for Excel file:", driveLink);
+      return NextResponse.json({ link: driveLink });
+    }
+
+    // For Beurer and Omron files, process as JSON
     const drive = await getDriveClient();
     if (!drive) {
       return NextResponse.json(
@@ -51,30 +65,21 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log("Checking if file is Excel:", filename);
-    console.log("isExcelFile result:", isExcelFile(filename));
+    console.log("Processing as non-Excel file:", filename);
 
-    // Detect file type by extension
-    if (isExcelFile(filename)) {
-      // Return the drive link for Excel files
-      const driveLink = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
-      console.log("Returning drive link for Excel file:", driveLink);
-      return NextResponse.json({ link: driveLink });
-    } else {
-      // Fetch as text for CSV only
-      const response = await drive.files.get(
-        {
-          fileId,
-          alt: "media",
-        },
-        { responseType: "text" }
-      );
-      return NextResponse.json({ content: response.data, encoding: "utf8" });
-    }
+    // Fetch as text for CSV only
+    const response = await drive.files.get(
+      {
+        fileId,
+        alt: "media",
+      },
+      { responseType: "text" }
+    );
+    return NextResponse.json({ content: response.data, encoding: "utf8" });
   } catch (error) {
-    console.error("Error fetching file content:", error);
+    console.error("Error processing request:", error);
     return NextResponse.json(
-      { error: "Failed to fetch file content" },
+      { error: "Failed to process request" },
       { status: 500 }
     );
   }
