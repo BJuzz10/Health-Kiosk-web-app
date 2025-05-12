@@ -51,10 +51,11 @@ export async function POST(request: Request) {
 
     // Detect file type by extension
     if (filename && isExcelFile(filename)) {
-      // Return the drive link for Excel files
+      console.log("Fetching Excel file content");
       const driveLink = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
       return NextResponse.json({ link: driveLink });
     } else {
+      console.log("Fetching Csv files");
       // Fetch as text for CSV or unknown
       const response = await drive.files.get(
         {
