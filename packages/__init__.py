@@ -1,6 +1,6 @@
 from flask import Flask, request, Blueprint, jsonify
 import os
-from flask_cors import CORS, cross_orgin
+from flask_cors import CORS
 
 def filter_backend():
     app = Flask(__name__)
