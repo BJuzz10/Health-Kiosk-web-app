@@ -399,6 +399,8 @@ export class DataFilter {
       throw new Error(`Failed to create checkup: ${checkupError.message}`);
     }
 
+    console.log("Checkup successfully created with ID:", checkupId);
+
     const measurements: VitalMeasurement[] = [];
 
     const latestRecord = records[0];
@@ -419,6 +421,23 @@ export class DataFilter {
         value: Number(latestRecord["PR(bpm)"]),
         unit: "bpm",
       });
+    }
+
+    if (measurements.length > 0) {
+      const { error: measurementsError } = await this.supabase
+        .from("vital_measurements")
+        .insert(measurements);
+
+      if (measurementsError) {
+        console.error("Error inserting measurements:", measurementsError);
+        throw new Error(
+          `Failed to insert measurements: ${measurementsError.message}`
+        );
+      }
+
+      console.log("Measurements successfully inserted:", measurements);
+    } else {
+      console.log("No measurements to insert.");
     }
 
     return measurements;
