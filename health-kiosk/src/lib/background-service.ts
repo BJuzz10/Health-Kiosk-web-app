@@ -83,7 +83,7 @@ export class BackgroundService {
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({ fileId: file.id }),
+              body: JSON.stringify({ fileId: file.id, filename: file.name }), // Include filename in the request
             });
 
             if (!contentResponse.ok) {
