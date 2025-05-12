@@ -412,6 +412,7 @@ export class DataFilter {
         type: "oxygen_saturation",
         value: Number(latestRecord["SPO2(%)"]),
         unit: "%",
+        patient_id: patientId,
       });
     }
 
@@ -421,6 +422,7 @@ export class DataFilter {
         type: "pulse",
         value: Number(latestRecord["PR(bpm)"]),
         unit: "bpm",
+        patient_id: patientId,
       });
     }
 
