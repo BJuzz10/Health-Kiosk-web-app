@@ -261,24 +261,37 @@ export default function AvailableDoctors() {
         } else {
           setCurrentDoctorRequest(null);
         }
+        const user = await getCurrentUser();
+        const { data: user_name } = await supabase
+          .from("patient_data")
+          .select("name")
+          .eq("auth_id", user?.id)
+          .single();
 
-        // Fetch approved consultations with meet links
-        const { data: approvedData, error: approvedError } = await supabase
-          .from("consultations")
-          .select("*")
-          .eq("status", "approved")
-          .not("meet_link", "is", null)
-          .order("created_at", { ascending: false });
+        if (user_name?.name) {
+          // Fetch approved consultations with meet links
+          const { data: approvedData, error: approvedError } = await supabase
+            .from("consultations")
+            .select("*")
+            .eq("status", "approved")
+            .eq("name", user_name.name)
+            .not("meet_link", "is", null)
+            .order("created_at", { ascending: false });
 
-        if (approvedError) {
-          console.error(
-            "Error fetching approved consultations:",
-            approvedError
+          if (approvedError) {
+            console.error(
+              "Error fetching approved consultations:",
+              approvedError
+            );
+            return;
+          }
+
+          setApprovedConsultations(approvedData || []);
+        } else {
+          console.warn(
+            "User name is not available, skipping approved consultations fetch."
           );
-          return;
         }
-
-        setApprovedConsultations(approvedData || []);
       } catch (error) {
         console.error("Error:", error);
       }
