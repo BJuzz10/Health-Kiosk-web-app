@@ -295,48 +295,63 @@ export class DataFilter {
   public async processFile(
     fileContent: ArrayBuffer | string,
     filename: string,
-    patientId?: string
+    link: string // Make link required
   ): Promise<void> {
     try {
-      // Get current user's patient ID if not provided
-      if (!patientId) {
-        patientId = await this.getCurrentPatientId();
-      }
-
       const deviceType = this.determineFilterType(filename);
-      let measurements: VitalMeasurement[] = [];
 
       if (deviceType === "healthtree") {
-        let csvContent: string;
-        if (typeof fileContent !== "string") {
-          csvContent = this.convertExcelToCSV(new Uint8Array(fileContent));
-        } else {
-          csvContent = fileContent;
-        }
-        measurements = await this.processHealthTreeData(csvContent, patientId);
-      } else {
-        const buffer =
-          typeof fileContent === "string"
-            ? new TextEncoder().encode(fileContent)
-            : new Uint8Array(fileContent);
-        const fileType = this.determineFileType(buffer);
-        const csvContent =
-          fileType === "excel"
-            ? this.convertExcelToCSV(buffer)
-            : typeof fileContent === "string"
-            ? fileContent
-            : new TextDecoder().decode(buffer);
+        const response = await fetch(
+          "https://health-kiosk-web-app-rrbq.onrender.com/download",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ link }),
+          }
+        );
 
-        switch (deviceType) {
-          case "beurer":
-            measurements = await this.processBeurerData(csvContent, patientId);
-            break;
-          case "omron":
-            measurements = await this.processOmronData(csvContent, patientId);
-            break;
-          default:
-            throw new Error("Unsupported device type");
+        if (!response.ok) {
+          throw new Error(
+            "Failed to process HealthTree data via external endpoint"
+          );
         }
+
+        const responseData = await response.json();
+        console.log("Response from external endpoint:", responseData);
+        return;
+      }
+
+      const buffer =
+        typeof fileContent === "string"
+          ? new TextEncoder().encode(fileContent)
+          : new Uint8Array(fileContent);
+      const fileType = this.determineFileType(buffer);
+      const csvContent =
+        fileType === "excel"
+          ? this.convertExcelToCSV(buffer)
+          : typeof fileContent === "string"
+          ? fileContent
+          : new TextDecoder().decode(buffer);
+
+      let measurements: VitalMeasurement[] = [];
+
+      switch (deviceType) {
+        case "beurer":
+          measurements = await this.processBeurerData(
+            csvContent,
+            await this.getCurrentPatientId()
+          );
+          break;
+        case "omron":
+          measurements = await this.processOmronData(
+            csvContent,
+            await this.getCurrentPatientId()
+          );
+          break;
+        default:
+          throw new Error("Unsupported device type");
       }
 
       if (measurements.length === 0) {

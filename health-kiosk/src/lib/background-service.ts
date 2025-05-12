@@ -4,6 +4,7 @@ interface DriveFile {
   id: string;
   name: string;
   createdTime: string; // Assuming createdTime is a string in ISO format
+  link: string; // Add link property to represent the drive file link
 }
 
 export class BackgroundService {
@@ -89,7 +90,7 @@ export class BackgroundService {
               throw new Error("Failed to fetch file content");
             }
 
-            const { content, encoding } = await contentResponse.json();
+            const { content, encoding, link } = await contentResponse.json(); // Include link in the response
             let fileContent = content;
             if (encoding === "base64") {
               // Decode base64 to Uint8Array for Excel files
@@ -104,7 +105,7 @@ export class BackgroundService {
               }
               fileContent = bytes;
             }
-            await this.dataFilter.processFile(fileContent, file.name);
+            await this.dataFilter.processFile(fileContent, file.name, link); // Pass the link to DataFilter
             console.log(`Successfully processed file: ${file.name}`);
 
             // Mark file as processed
