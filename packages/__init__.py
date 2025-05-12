@@ -1,9 +1,11 @@
 from flask import Flask, request, Blueprint, jsonify
 import os
+from flask_cors import CORS, cross_orgin
 
 def filter_backend():
     app = Flask(__name__)
-
+    CORS(app, origins="*")
+    
     app.secret_key = 'my_secret_key'
     app.config['SESSION_PERMANENT'] = True 
 
