@@ -388,6 +388,7 @@ export class DataFilter {
     const { error: checkupError } = await this.supabase
       .from("checkups")
       .insert({
+        id: checkupId,
         patient_id: patientId,
         checkup_date: currentTimestamp,
         reason: "Vital signs measurement from HealthTree device",
