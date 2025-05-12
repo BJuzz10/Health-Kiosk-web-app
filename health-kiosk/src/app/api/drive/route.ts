@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { getDriveClient } from "@/lib/google/drive-client";
 
 function isExcelFile(filename: string) {
-  return filename.endsWith(".xls") || filename.endsWith(".xlsx");
+  return (
+    filename.endsWith(".xls") ||
+    filename.endsWith(".xlsx") ||
+    filename.startsWith("DataRecord")
+  );
 }
 
 export async function GET() {
@@ -50,7 +54,7 @@ export async function POST(request: Request) {
     }
 
     // Detect file type by extension
-    if (filename && isExcelFile(filename)) {
+    if (isExcelFile(filename)) {
       console.log("Fetching Excel file content");
       const driveLink = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
       return NextResponse.json({ link: driveLink });
