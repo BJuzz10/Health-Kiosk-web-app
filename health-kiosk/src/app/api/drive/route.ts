@@ -51,6 +51,9 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log("Checking if file is Excel:", filename);
+    console.log("isExcelFile result:", isExcelFile(filename));
+
     // Detect file type by extension
     if (isExcelFile(filename)) {
       // Return the drive link for Excel files
@@ -58,7 +61,7 @@ export async function POST(request: Request) {
       console.log("Returning drive link for Excel file:", driveLink);
       return NextResponse.json({ link: driveLink });
     } else {
-      // Fetch as text for CSV or unknown
+      // Fetch as text for CSV only
       const response = await drive.files.get(
         {
           fileId,
