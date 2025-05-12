@@ -43,15 +43,6 @@ interface Patient {
   auth_id: string | null;
 }
 
-interface PresenceState {
-  user_id: string;
-  online_at: number;
-}
-
-interface PresenceStateMap {
-  [key: string]: PresenceState[];
-}
-
 export default function PatientsAppointments() {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -69,11 +60,13 @@ export default function PatientsAppointments() {
         setLoading(true);
         console.log("Starting to fetch patients...");
 
-        // Fetch all patients from the database - include internal ID
-        console.log("Fetching patients from database...");
+        // Fetch all patients and their active status from the database
+        console.log(
+          "Fetching patients and their active status from database..."
+        );
         const { data: patientData, error: dbError } = await supabase
           .from("patient_data")
-          .select("id, name, auth_id");
+          .select("id, name, auth_id, active_status");
 
         console.log("Database response:", { patientData, dbError });
 
@@ -87,103 +80,16 @@ export default function PatientsAppointments() {
           return;
         }
 
-        // Initialize patients with offline status
-        const initialPatients: Patient[] = patientData.map((patient) => ({
+        // Initialize patients with status based on active_status column
+        const updatedPatients: Patient[] = patientData.map((patient) => ({
           id: patient.id,
           name: patient.name,
           auth_id: patient.auth_id,
-          status: "Offline",
+          status: patient.active_status === "online" ? "Online" : "Offline",
         }));
 
-        setPatients(initialPatients);
-        setFilteredPatients(initialPatients);
-
-        // Set up presence channel for patients with auth_id
-        const channel = supabase.channel("patient-presence", {
-          config: {
-            presence: {
-              key: "patient-status",
-            },
-          },
-        });
-
-        // Handle presence state changes
-        channel.on("presence", { event: "sync" }, () => {
-          const state = channel.presenceState() as PresenceStateMap;
-          console.log("Presence state updated:", state);
-
-          // Get all online user IDs from the presence state
-          const onlineUserIds = new Set<string>();
-          Object.values(state).forEach((presences) => {
-            presences.forEach((presence) => {
-              if (presence.user_id) {
-                onlineUserIds.add(presence.user_id);
-              }
-            });
-          });
-
-          // Update patients' online status if they have an auth_id
-          setPatients((prev) =>
-            prev.map((patient) => ({
-              ...patient,
-              status:
-                patient.auth_id && onlineUserIds.has(patient.auth_id)
-                  ? "Online"
-                  : "Offline",
-            }))
-          );
-        });
-
-        // Subscribe to the channel
-        channel.subscribe(async (status) => {
-          if (status === "SUBSCRIBED") {
-            // For doctor, track that we're monitoring
-            const {
-              data: { user },
-            } = await supabase.auth.getUser();
-            if (user) {
-              await channel.track({
-                online_at: new Date().getTime(),
-                user_id: user.id,
-                role: "doctor",
-              });
-            }
-          }
-        });
-
-        // Set up individual channels only for patients with auth_id
-        patientData.forEach((patient) => {
-          if (patient.auth_id) {
-            const patientChannel = supabase.channel(`user-${patient.auth_id}`, {
-              config: {
-                presence: {
-                  key: patient.auth_id,
-                },
-              },
-            });
-
-            patientChannel.on("presence", { event: "sync" }, () => {
-              const state = patientChannel.presenceState() as PresenceStateMap;
-              console.log(`Patient ${patient.name} presence state:`, state);
-
-              // Update this specific patient's status
-              setPatients((prev) =>
-                prev.map((p) => {
-                  if (p.auth_id === patient.auth_id) {
-                    return {
-                      ...p,
-                      status:
-                        Object.keys(state).length > 0 ? "Online" : "Offline",
-                    };
-                  }
-                  return p;
-                })
-              );
-            });
-
-            patientChannel.subscribe();
-          }
-        });
+        setPatients(updatedPatients);
+        setFilteredPatients(updatedPatients);
       } catch (error) {
         console.error("Error fetching patients:", error);
         alert(
@@ -200,14 +106,6 @@ export default function PatientsAppointments() {
     return () => {
       const mainChannel = supabase.channel("patient-presence");
       mainChannel.unsubscribe();
-
-      // Cleanup individual patient channels
-      patients.forEach((patient) => {
-        if (patient.auth_id) {
-          const patientChannel = supabase.channel(`user-${patient.auth_id}`);
-          patientChannel.unsubscribe();
-        }
-      });
     };
   }, []);
 
