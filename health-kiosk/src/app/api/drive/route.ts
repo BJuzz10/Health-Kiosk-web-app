@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       const driveLink = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
       return NextResponse.json({ link: driveLink });
     } else {
-      console.log("Fetching Csv files");
+      const log = console.log("Fetching Csv files");
       // Fetch as text for CSV or unknown
       const response = await drive.files.get(
         {
@@ -64,7 +64,11 @@ export async function POST(request: Request) {
         },
         { responseType: "text" }
       );
-      return NextResponse.json({ content: response.data, encoding: "utf8" });
+      return NextResponse.json({
+        content: response.data,
+        encoding: "utf8",
+        log,
+      });
     }
   } catch (error) {
     console.error("Error fetching file content:", error);
