@@ -298,6 +298,12 @@ export class DataFilter {
 
         const responseData = await response.json();
         console.log("Response from external endpoint:", responseData);
+
+        // Call processHealthTreeData with the response data
+        await this.processHealthTreeData(
+          responseData,
+          await this.getCurrentPatientId()
+        );
         return;
       }
 
