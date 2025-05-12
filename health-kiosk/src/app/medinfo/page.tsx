@@ -82,6 +82,8 @@ export default function MedicalInformation() {
             "bp_systolic",
             "bp_diastolic",
             "temperature",
+            "pulse",
+            "oxygen_saturation",
           ])
           .order("recorded_at", { ascending: false });
 
@@ -114,6 +116,8 @@ export default function MedicalInformation() {
           systolic: getLatestValue("bp_systolic"),
           diastolic: getLatestValue("bp_diastolic"),
           temperature: getLatestValue("temperature"),
+          pulserate: getLatestValue("pulse"),
+          oxygenSaturation: getLatestValue("oxygen_saturation"),
           symptoms: latestCheckup?.reason || "",
         }));
       } catch (err) {

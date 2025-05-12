@@ -1,6 +1,5 @@
 import { parse } from "csv-parse/sync";
 import { createClient } from "@/utils/supabase/client";
-import * as XLSX from "xlsx";
 import { v4 as uuidv4 } from "uuid";
 
 interface VitalMeasurement {
@@ -34,35 +33,8 @@ interface OmronRecord {
   Device: string;
 }
 
-interface HealthTreeRecord {
-  ID: string | number;
-  Time: string;
-  "SPO2(%)": string | number;
-  "PR(bpm)": string | number;
-}
-
 export class DataFilter {
   private supabase = createClient();
-
-  private convertExcelToCSV(fileContent: Uint8Array): string {
-    try {
-      // Read the Excel file
-      const workbook = XLSX.read(fileContent, { type: "array" });
-
-      // Get the first sheet
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
-
-      // Convert to CSV
-      const csvContent = XLSX.utils.sheet_to_csv(worksheet);
-      console.log("Converted Excel to CSV:", csvContent.substring(0, 200));
-
-      return csvContent;
-    } catch (error) {
-      console.error("Error converting Excel to CSV:", error);
-      throw new Error("Failed to convert Excel file to CSV");
-    }
-  }
 
   private determineFileType(fileContent: Uint8Array): "excel" | "csv" {
     // Check for Excel file magic numbers
@@ -334,12 +306,16 @@ export class DataFilter {
           ? new TextEncoder().encode(fileContent)
           : new Uint8Array(fileContent);
       const fileType = this.determineFileType(buffer);
+
+      // Directly use the file content for Beurer and Omron files without Excel conversion
       const csvContent =
-        fileType === "excel"
-          ? this.convertExcelToCSV(buffer)
-          : typeof fileContent === "string"
-          ? fileContent
-          : new TextDecoder().decode(buffer);
+        fileType === "csv"
+          ? typeof fileContent === "string"
+            ? fileContent
+            : new TextDecoder().decode(buffer)
+          : (() => {
+              throw new Error("Excel file processing is no longer supported.");
+            })();
 
       let measurements: VitalMeasurement[] = [];
 
@@ -383,35 +359,29 @@ export class DataFilter {
   }
 
   private async processHealthTreeData(
-    csvContent: string,
+    responseData: {
+      filtered_data: Array<{
+        ID: string | number;
+        "SPO2(%)": string | number;
+        "PR(bpm)": string | number;
+      }>;
+    },
     patientId: string
   ): Promise<VitalMeasurement[]> {
-    const records = parse(csvContent, {
-      columns: true,
-      skip_empty_lines: true,
-      delimiter: ",",
-      bom: true,
-      trim: true,
-    }) as HealthTreeRecord[];
+    const records = responseData.filtered_data;
 
     if (!Array.isArray(records) || records.length === 0) {
       throw new Error("No records found in HealthTree data");
     }
 
-    const latestRecord = records[0];
-    const timeValue = latestRecord.Time?.toString() || "";
-    const [year, month] = timeValue
-      .split("-")
-      .map((num) => num.padStart(2, "0"));
-    const timestamp = `${year}-${month}-01 00:00:00`;
+    const currentTimestamp = new Date().toISOString();
 
     const checkupId = uuidv4();
     const { error: checkupError } = await this.supabase
       .from("checkups")
       .insert({
-        id: checkupId,
         patient_id: patientId,
-        checkup_date: timestamp,
+        checkup_date: currentTimestamp,
         reason: "Vital signs measurement from HealthTree device",
         created_at: new Date().toISOString(),
       });
@@ -422,6 +392,8 @@ export class DataFilter {
     }
 
     const measurements: VitalMeasurement[] = [];
+
+    const latestRecord = records[0];
 
     if (latestRecord["SPO2(%)"]) {
       measurements.push({
