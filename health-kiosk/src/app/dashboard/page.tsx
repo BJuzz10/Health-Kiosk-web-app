@@ -66,24 +66,20 @@ export default function KioskDashboard() {
         console.error("User is null or email is missing.");
         return;
       }
-
-      const { error } = await supabase.from("patient_data").upsert(
-        {
-          email: user.email,
-          active_status: "offline",
-        },
-        { onConflict: "email" }
-      );
+      const { error } = await supabase
+        .from("patient_data")
+        .update({ active_status: "offline" })
+        .eq("email", user.email);
 
       if (error) {
-        console.error("Upsert error:", error);
+        console.error("Update error:", error);
         setError(
           "Failed to update patient data. Please try again." + errorMessage
         );
         return;
       }
     } catch (error) {
-      console.error("Error signing out:", error);
+      console.error("Error during logout:", error);
     }
   };
   if (!mounted) return null;

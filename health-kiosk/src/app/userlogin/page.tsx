@@ -79,16 +79,13 @@ export default function AuthPage() {
           return;
         }
 
-        const { error } = await supabase.from("patient_data").upsert(
-          {
-            email: user.email,
-            active_status: "online",
-          },
-          { onConflict: "email" }
-        );
+        const { error } = await supabase
+          .from("patient_data")
+          .update({ active_status: "online" })
+          .eq("email", user.email);
 
         if (error) {
-          console.error("Upsert error:", error);
+          console.error("Update error:", error);
           setError("Failed to update patient data. Please try again.");
           return;
         }
