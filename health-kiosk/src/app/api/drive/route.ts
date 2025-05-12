@@ -34,6 +34,8 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const { fileId, filename } = await request.json();
+    console.log("Received fileId:", fileId);
+    console.log("Received filename:", filename);
     if (!fileId) {
       return NextResponse.json(
         { error: "File ID is required" },
