@@ -78,17 +78,26 @@ function PatientInfoContent() {
         if (patientError) throw patientError;
 
         // Get latest checkup - using internal ID directly since it matches patient_id in checkups
-        const { data: checkups, error: checkupsError } = await supabase
-          .from("checkups")
-          .select("reason")
-          .eq("patient_id", patientId)
-          .not("reason", "ilike", "%measurement from%device%")
-          .not("reason", "is", null)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .single();
+        let checkups = null;
+        try {
+          const { data, error: checkupsError } = await supabase
+            .from("checkups")
+            .select("reason")
+            .eq("patient_id", patientId)
+            .not("reason", "ilike", "%measurement from%device%")
+            .not("reason", "is", null)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
-        if (checkupsError) throw checkupsError;
+          if (checkupsError) {
+            console.warn("Error fetching latest checkup:", checkupsError);
+          } else {
+            checkups = data;
+          }
+        } catch (error) {
+          console.error("Unexpected error fetching latest checkup:", error);
+        }
 
         // Get vitals if there's a checkup
         let vitals = null;
