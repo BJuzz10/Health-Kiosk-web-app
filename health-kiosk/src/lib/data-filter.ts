@@ -130,9 +130,19 @@ export class DataFilter {
       if (headerIndex !== -1) {
         const temperatureLines = lines
           .slice(headerIndex + 1)
-          .filter((line) => line.trim());
+          .filter((line) => line.trim())
+          .sort((a, b) => {
+            const [dateA, timeA] = a.split(";").slice(0, 2);
+            const [dateB, timeB] = b.split(";").slice(0, 2);
+
+            const timestampA = new Date(`${dateA} ${timeA}`).getTime();
+            const timestampB = new Date(`${dateB} ${timeB}`).getTime();
+
+            return timestampB - timestampA; // Sort in descending order
+          });
+
         if (temperatureLines.length > 0) {
-          const mostRecentRecord = temperatureLines[0]; // Take only the most recent record
+          const mostRecentRecord = temperatureLines[0]; // Now guaranteed to be the most recent
           const [date, time, temperature] = mostRecentRecord.split(";");
           if (date && time && temperature) {
             const [month, day, year] = date.split("/");
