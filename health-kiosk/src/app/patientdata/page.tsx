@@ -53,6 +53,8 @@ function PatientDataContent() {
     meetLink: null,
     consultationId: null,
   });
+  const [showMeetOptionsModal, setShowMeetOptionsModal] = useState(false);
+  const [newMeetLink, setNewMeetLink] = useState("");
 
   // Validate patient ID
   useEffect(() => {
@@ -181,9 +183,57 @@ function PatientDataContent() {
 
   const handleJoinMeet = () => {
     if (consultationStatus.hasApproved && consultationStatus.meetLink) {
-      window.open(consultationStatus.meetLink, "_blank");
+      // Instead of directly opening the link, show a modal with options
+      setShowMeetOptionsModal(true);
     } else {
       setShowMeetLinkModal(true);
+    }
+  };
+
+  const joinExistingMeet = () => {
+    if (consultationStatus.meetLink) {
+      window.open(consultationStatus.meetLink, "_blank");
+      setShowMeetOptionsModal(false);
+    }
+  };
+
+  const handleUpdateMeetLink = async () => {
+    if (!newMeetLink || !consultationStatus.consultationId) return;
+
+    setIsSubmitting(true);
+
+    try {
+      // Update the consultation with the new meet link
+      const { error } = await supabase
+        .from("consultations")
+        .update({
+          meet_link: newMeetLink,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", consultationStatus.consultationId);
+
+      if (error) {
+        console.error("Error updating meet link:", error);
+        alert("Failed to update meeting link. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Update local state
+      setConsultationStatus({
+        ...consultationStatus,
+        meetLink: newMeetLink,
+      });
+
+      // Close modal and reset state
+      setShowMeetOptionsModal(false);
+      setNewMeetLink("");
+      alert("Meeting link has been updated successfully!");
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An unexpected error occurred.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -329,6 +379,15 @@ function PatientDataContent() {
     prescriptionHistory: isEnglish
       ? "Prescription History"
       : "Kasaysayan ng mga Reseta",
+    meetOptions: isEnglish ? "Meeting Options" : "Mga Opsyon sa Pagpupulong",
+    joinExistingMeet: isEnglish
+      ? "Join Existing Meeting"
+      : "Sumali sa Kasalukuyang Pagpupulong",
+    updateMeetLink: isEnglish
+      ? "Update Meeting Link"
+      : "I-update ang Link ng Pagpupulong",
+    updateLink: isEnglish ? "Update Link" : "I-update ang Link",
+    updating: isEnglish ? "Updating..." : "Ina-update...",
   };
 
   // Only render content if we have a valid patient
@@ -541,6 +600,63 @@ function PatientDataContent() {
             <Button
               variant="outline"
               onClick={() => setShowMeetLinkModal(false)}
+            >
+              {translations.close}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Meet Options Modal */}
+      <Dialog
+        open={showMeetOptionsModal}
+        onOpenChange={setShowMeetOptionsModal}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">
+              {translations.meetOptions}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-6 space-y-6">
+            <div className="flex flex-col space-y-2">
+              <Button
+                onClick={joinExistingMeet}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <FaVideo className="mr-2" /> {translations.joinExistingMeet}
+              </Button>
+
+              <p className="text-sm text-gray-500 mt-1">
+                {consultationStatus.meetLink}
+              </p>
+            </div>
+
+            <div className="border-t pt-4">
+              <h3 className="font-medium mb-2">
+                {translations.updateMeetLink}
+              </h3>
+              <Input
+                placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                value={newMeetLink}
+                onChange={(e) => setNewMeetLink(e.target.value)}
+                className="mb-2"
+              />
+              <Button
+                onClick={handleUpdateMeetLink}
+                disabled={!newMeetLink || isSubmitting}
+                className="w-full"
+              >
+                {isSubmitting ? translations.updating : translations.updateLink}
+              </Button>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowMeetOptionsModal(false)}
             >
               {translations.close}
             </Button>
