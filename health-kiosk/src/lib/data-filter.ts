@@ -148,18 +148,34 @@ export class DataFilter {
             const [month, day, year] = date.split("/");
             const [timeStr] = time.split(",");
             const [hours, minutes] = timeStr.split(":");
-            const isPM = timeStr.toLowerCase().includes("pm");
-
             let hour = parseInt(hours);
-            if (isPM && hour < 12) hour += 12;
-            if (!isPM && hour === 12) hour = 0;
+
+            // Normalize time format
+            if (
+              timeStr.toLowerCase().includes("pm") ||
+              timeStr.toLowerCase().includes("am")
+            ) {
+              const isPM = timeStr.toLowerCase().includes("pm");
+              if (isPM && hour < 12) hour += 12;
+              if (!isPM && hour === 12) hour = 0;
+            } else if (hour > 12) {
+              // If hour is greater than 12 and no AM/PM marker, assume 24-hour format
+              hour = hour;
+            } else {
+              console.warn(
+                "Ambiguous time format detected, defaulting to 24-hour format."
+              );
+            }
+
+            // If already in 24-hour format, strip AM/PM if present
+            const normalizedTime = `${hour
+              .toString()
+              .padStart(2, "0")}:${minutes.padStart(2, "0")}`;
 
             const checkupTimestamp = `${year}-${month.padStart(
               2,
               "0"
-            )}-${day.padStart(2, "0")} ${hour
-              .toString()
-              .padStart(2, "0")}:${minutes.padStart(2, "0")}`;
+            )}-${day.padStart(2, "0")} ${normalizedTime}`;
 
             const checkupId = uuidv4();
             const { error: checkupError } = await this.supabase
