@@ -274,7 +274,7 @@ export default function AvailableDoctors() {
             .from("consultations")
             .select("*")
             .eq("status", "approved")
-            .eq("name", user_name.name)
+            .eq("patient_name", user_name.name)
             .not("meet_link", "is", null)
             .order("created_at", { ascending: false });
 
