@@ -90,6 +90,7 @@ interface Consultation {
   doctor_id: string;
   patient_id: string;
   patient_name: string;
+  doctor_name: string;
   status: "pending" | "approved" | "completed";
   created_at: string;
   meet_link: string | null;
@@ -1089,7 +1090,7 @@ export default function AvailableDoctors() {
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="font-medium">
-                          {request.patient_name || "Patient"}
+                          {request.doctor_name || "Doctor"}
                         </p>
                         <p className="text-sm text-gray-500">
                           Requested:{" "}
@@ -1104,7 +1105,7 @@ export default function AvailableDoctors() {
                 {selectedRequest && (
                   <div className="mt-6 border-t pt-4">
                     <h3 className="font-medium mb-2">
-                      Add Google Meet Link for {selectedRequest.patient_name}
+                      Add Google Meet Link for {selectedRequest.doctor_name}
                     </h3>
                     <Input
                       placeholder="https://meet.google.com/xxx-xxxx-xxx"
@@ -1175,7 +1176,7 @@ export default function AvailableDoctors() {
                     <div className="flex justify-between items-center mb-2">
                       <div>
                         <p className="font-medium">
-                          {consultation.patient_name || "Patient"}
+                          {consultation.doctor_name || "Doctor"}
                         </p>
                         <p className="text-sm text-gray-500">
                           Created:{" "}
