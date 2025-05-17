@@ -84,7 +84,6 @@ function PatientInfoContent() {
             .from("checkups")
             .select("reason")
             .eq("patient_id", patientId)
-            .not("reason", "ilike", "%measurement from%device%")
             .not("reason", "is", null)
             .order("created_at", { ascending: false })
             .limit(1)
