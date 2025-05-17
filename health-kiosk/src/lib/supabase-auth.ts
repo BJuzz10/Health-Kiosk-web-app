@@ -139,36 +139,6 @@ export async function getRedirectPathAfterAuth() {
   return hasData ? "/dashboard" : "/user"; // Go to dashboard if data exists, otherwise to user profile
 }
 
-export async function handleSignUp(email: string, password: string) {
-  try {
-    // Create auth user first
-    const { data: authData, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (signUpError) throw signUpError;
-    if (!authData.user) throw new Error("No user data returned after signup");
-
-    // Create patient data with auth user's UID
-    const { error: patientError } = await supabase.from("patient_data").insert({
-      user_id: authData.user.id, // This is the key part - linking auth UID to patient_data
-      email: email,
-    });
-
-    if (patientError) {
-      console.error("Error creating patient data:", patientError);
-      await supabase.auth.signOut();
-      throw patientError;
-    }
-
-    return authData;
-  } catch (error) {
-    console.error("Error in handleSignUp:", error);
-    throw error;
-  }
-}
-
 export async function handleSignIn(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,

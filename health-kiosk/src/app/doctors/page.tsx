@@ -228,6 +228,12 @@ export default function AvailableDoctors() {
   useEffect(() => {
     const fetchConsultations = async () => {
       try {
+        const user = await getCurrentUser();
+        const { data: user_name } = await supabase
+          .from("patient_data")
+          .select("id")
+          .eq("auth_id", user?.id)
+          .single();
         // Fetch pending consultations
         const {
           data: pendingData,
@@ -237,6 +243,7 @@ export default function AvailableDoctors() {
           .from("consultations")
           .select("*", { count: "exact" })
           .eq("status", "pending")
+          .eq("patient_id", user_name?.id)
           .is("meet_link", null);
 
         if (pendingError) {
@@ -261,20 +268,13 @@ export default function AvailableDoctors() {
         } else {
           setCurrentDoctorRequest(null);
         }
-        const user = await getCurrentUser();
-        const { data: user_name } = await supabase
-          .from("patient_data")
-          .select("name")
-          .eq("auth_id", user?.id)
-          .single();
-
-        if (user_name?.name) {
+        if (user_name?.id) {
           // Fetch approved consultations with meet links
           const { data: approvedData, error: approvedError } = await supabase
             .from("consultations")
             .select("*")
             .eq("status", "approved")
-            .eq("patient_name", user_name.name)
+            .eq("patient_id", user_name.id)
             .not("meet_link", "is", null)
             .order("created_at", { ascending: false });
 
@@ -385,7 +385,7 @@ export default function AvailableDoctors() {
         body: JSON.stringify({
           doctorId: selectedDoctor?.id,
           patientId: patientData?.id,
-          patientName: patientData?.name,
+          doctorName: selectedDoctor?.name,
         }),
       });
 

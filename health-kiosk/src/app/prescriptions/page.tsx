@@ -90,7 +90,7 @@ export default function PrescriptionsPage() {
           .from("prescriptions")
           .select("*")
           .eq("patient_id", patientData.id)
-          .order("upload_date", { ascending: false });
+          .order("prescription_date", { ascending: false });
 
         if (error) throw error;
 
@@ -261,7 +261,7 @@ export default function PrescriptionsPage() {
                     </div>
                     <div className="text-xs text-gray-500">
                       {format(
-                        new Date(prescription.upload_date),
+                        new Date(prescription.prescription_date),
                         "MMM dd, yyyy"
                       )}
                     </div>
