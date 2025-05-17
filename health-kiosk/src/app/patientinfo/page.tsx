@@ -84,6 +84,7 @@ function PatientInfoContent() {
             .from("checkups")
             .select("reason")
             .eq("patient_id", patientId)
+            .not("reason", "ilike", "%measurement from%device%")
             .not("reason", "is", null)
             .order("created_at", { ascending: false })
             .limit(1)
@@ -100,16 +101,14 @@ function PatientInfoContent() {
 
         // Get vitals if there's a checkup
         let vitals = null;
-        if (checkups) {
-          const { data: vitalsData, error: vitalsError } = await supabase
-            .from("vital_measurements")
-            .select("*")
-            .eq("patient_id", patientId) // Using internal ID directly
-            .order("recorded_at", { ascending: false });
+        const { data: vitalsData, error: vitalsError } = await supabase
+          .from("vital_measurements")
+          .select("*")
+          .eq("patient_id", patientId) // Using internal ID directly
+          .order("recorded_at", { ascending: false });
 
-          if (vitalsError) throw vitalsError;
-          vitals = vitalsData;
-        }
+        if (vitalsError) throw vitalsError;
+        vitals = vitalsData;
 
         // Format birthday if exists
         const formattedBirthday = patientData.birthday
