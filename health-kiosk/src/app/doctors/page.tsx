@@ -386,6 +386,7 @@ export default function AvailableDoctors() {
         body: JSON.stringify({
           doctorId: selectedDoctor?.id,
           patientId: patientData?.id,
+          patientName: patientData?.name,
           doctorName: selectedDoctor?.name,
         }),
       });

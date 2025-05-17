@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   try {
     // Parse the request body
     const body = await request.json();
-    const { doctorId, patientId, patientName } = body;
+    const { doctorId, patientId, patientName, doctorName } = body;
 
     // Save to Supabase without a meet link
     const { error } = await supabase.from("consultations").insert([
@@ -19,6 +19,7 @@ export async function POST(request: Request) {
         doctor_id: doctorId || "unknown",
         patient_id: patientId || "unknown",
         patient_name: patientName || "Unknown Patient",
+        doctor_name: doctorName || "Unknown Doctor",
         status: "pending",
         created_at: new Date().toISOString(),
         meet_link: null, // No meet link yet
