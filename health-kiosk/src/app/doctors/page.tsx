@@ -223,6 +223,27 @@ export default function AvailableDoctors() {
     };
 
     fetchDoctors();
+
+    // Set up real-time subscription for doctor profile updates
+    const doctorsSubscription = supabase
+      .channel("doctors_updates")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "doctors",
+        },
+        () => {
+          console.log("Doctor profile updated, refreshing data...");
+          fetchDoctors();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      doctorsSubscription.unsubscribe();
+    };
   }, [router, supabase]);
 
   // Check for pending consultation requests and approved consultations
@@ -670,7 +691,10 @@ export default function AvailableDoctors() {
         <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
           {filteredDoctors.length > 0 ? (
             filteredDoctors.map((doctor) => (
-              <Card key={doctor.id} className="overflow-hidden">
+              <Card
+                key={`${doctor.id}-${doctor.updated_at}`}
+                className="overflow-hidden"
+              >
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-xl">{doctor.name}</CardTitle>
@@ -687,6 +711,7 @@ export default function AvailableDoctors() {
                       <AvatarImage
                         src={doctor.image_url || "/placeholder.svg"}
                         alt={doctor.name}
+                        className="object-cover"
                       />
                       <AvatarFallback className="bg-gray-100">
                         <UserRound size={48} />
@@ -787,6 +812,7 @@ export default function AvailableDoctors() {
                           <AvatarImage
                             src={doctor.image_url || "/placeholder.svg"}
                             alt={doctor.name}
+                            className="object-cover"
                           />
                           <AvatarFallback>
                             <UserRound size={20} />
@@ -876,6 +902,7 @@ export default function AvailableDoctors() {
                   <AvatarImage
                     src={selectedDoctor.image_url || "/placeholder.svg"}
                     alt={selectedDoctor.name}
+                    className="object-cover"
                   />
                   <AvatarFallback className="bg-gray-100">
                     <UserRound size={48} />
@@ -1005,6 +1032,7 @@ export default function AvailableDoctors() {
                       <AvatarImage
                         src={selectedDoctor.image_url || "/placeholder.svg"}
                         alt={selectedDoctor.name}
+                        className="object-cover"
                       />
                       <AvatarFallback className="bg-gray-100">
                         <UserRound size={24} />

@@ -259,6 +259,7 @@ export default function DoctorProfile() {
           data: { publicUrl },
         } = supabase.storage.from("doctor-profiles").getPublicUrl(fileName);
 
+        // Set the new image URL in the state
         setNewInfo({ ...newInfo, profileImage: publicUrl });
       } catch (error) {
         console.error("Error uploading image:", error);
@@ -309,16 +310,17 @@ export default function DoctorProfile() {
         address: newInfo.address,
         consultation_type: newInfo.consultationType,
         schedule: newInfo.schedule,
-        image_url: newInfo.profileImage,
+        image_url: newInfo.profileImage, // Make sure this is set correctly
         updated_at: new Date().toISOString(),
-        email: currentDoctor.email || user.email, // Use existing email or fall back to user's email
+        email: currentDoctor.email || user.email,
       };
+
+      console.log("Updating doctor profile with data:", updateData); // Add logging
 
       const { error: updateError } = await supabase
         .from("doctors")
         .update(updateData)
-        .eq("auth_id", user.id)
-        .eq("email", updateData.email); // Add email condition to match RLS policy
+        .eq("auth_id", user.id);
 
       if (updateError) {
         console.error("Update error:", updateError);
