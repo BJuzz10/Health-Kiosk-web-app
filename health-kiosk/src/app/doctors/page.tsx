@@ -596,7 +596,7 @@ export default function AvailableDoctors() {
       );
     }
   };
-  // 
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white p-4 flex flex-col items-center relative pt-20">
       {/* Time Display */}
@@ -605,7 +605,7 @@ export default function AvailableDoctors() {
       {/* Title with Notification Badge */}
       <div className="flex items-center justify-center mb-2">
         <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-800 text-center">
-          Available Doctors Today
+          {t("Available Doctors Today")}
         </h1>
         {pendingConsultations > 0 && (
           <Badge className="ml-2 bg-red-500 text-white">
@@ -614,7 +614,7 @@ export default function AvailableDoctors() {
         )}
       </div>
       <p className="text-gray-600 mb-6 text-center">
-        Showing doctors available on {currentDay}
+        {t("Showing doctors available on {currentDay}")}
       </p>
 
       {/* Search Input */}
