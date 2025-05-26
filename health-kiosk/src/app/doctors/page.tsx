@@ -1309,7 +1309,7 @@ export default function AvailableDoctors() {
           onClick={() => router.push("/dashboard")}
           className="flex items-center gap-2"
         >
-          <ChevronLeft size={16} /> Bumalik
+          <ChevronLeft size={16} /> {t("back.button")} {/*Bumalik*/}
         </Button>
       </div>
     </div>
