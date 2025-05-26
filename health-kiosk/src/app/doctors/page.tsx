@@ -613,6 +613,13 @@ export default function AvailableDoctors() {
           </Badge>
         )}
       </div>
+
+      <div className="absolute top-4 left-6">
+        <Button variant="outline" onClick={toggleLanguage}>
+          {t("language.toggle")}
+        </Button>
+      </div>
+      
       <p className="text-gray-600 mb-6 text-center">
         {t("Showing doctors available on {currentDay}")}
       </p>
