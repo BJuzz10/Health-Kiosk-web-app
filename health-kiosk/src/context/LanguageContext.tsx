@@ -178,7 +178,7 @@ const translations: Record<string, Record<string, string>> = {
     "user.contact": "Numero ng Telepono",
 
     //Available /doctors
-    "doctors.title": "Available Doctors Today",
+    "doctors.title": "Mga Doktor na Available ngayon",
   },
 };
 
