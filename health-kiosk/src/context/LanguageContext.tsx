@@ -123,6 +123,11 @@ const translations: Record<string, Record<string, string>> = {
     //Available /doctors
     "doctors.title": "Available Doctors Today",
     "doctors.available": "Showing doktors available on",
+
+    //deeplink
+    "deeplink.BP": "Monitor your BP using the Omron Connect app.",
+    "deeplink.Oxi": "Check you oxygen levels with the HealthTree app.",
+    "deeplink.Temp": "Track your temperature using the Beurer Health Manager Pro App.",
   },
   tl: {
     // Common
@@ -181,6 +186,11 @@ const translations: Record<string, Record<string, string>> = {
     //Available /doctors
     "doctors.title": "Mga Doktor na Available ngayon",
     "doctors.available": "Narito ang mga doktor na available ngayong",
+
+    //deeplink 
+    "deeplink.BP": "Magpa BP gamit and Omron Connect App.",
+    "deeplink.Oxi": "Tignan ang iyong oxygen level gamit ang HealthTree app.",
+    "deeplink.Temp": "Kunin ang temperatura gamit ang Beurer Health Manager Pro App.",
   },
 };
 
