@@ -304,7 +304,7 @@ function PatientDataContent() {
       // Fetch vital measurements data
       const { data: vitalData, error: vitalError } = await supabase
         .from("vital_measurements")
-        .select("type, value, unit, recorded_at") //added recorded_at and removed patient_id
+        .select("recorded_at, type, value, unit") //added recorded_at and removed patient_id
         .eq("patient_id", patientId);
 
       if (vitalError || !vitalData) {
