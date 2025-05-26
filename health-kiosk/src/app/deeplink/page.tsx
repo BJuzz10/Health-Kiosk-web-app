@@ -97,6 +97,12 @@ export default function HealthAppsPage() {
       <div className="absolute top-4 right-6 text-gray-700 text-lg font-semibold z-10">
         {time.toLocaleTimeString()}
       </div>
+      {/*change language button*/}
+      <div className="absolute top-4 left-6">
+        <Button variant="outline" onClick={toggleLanguage}>
+          {t("language.toggle")}
+        </Button>
+      </div>
 
       {/* Bumalik Button */}
       <Button
