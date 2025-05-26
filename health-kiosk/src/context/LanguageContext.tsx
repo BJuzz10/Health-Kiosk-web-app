@@ -118,7 +118,10 @@ const translations: Record<string, Record<string, string>> = {
     "user.sex": "Sex",
     "user.birthday": "Birthday",
     "user.address": "Address",
-    "user.contact": "Contact Number",
+    "user.contact": "Contact Number", 
+
+    //Available /doctors
+    "doctors.title": "Available Doctors Today",
   },
   tl: {
     // Common
@@ -173,6 +176,9 @@ const translations: Record<string, Record<string, string>> = {
     "user.birthday": "Petsa ng Kapanganakan",
     "user.address": "Address",
     "user.contact": "Numero ng Telepono",
+
+    //Available /doctors
+    "doctors.title": "Available Doctors Today",
   },
 };
 

@@ -605,7 +605,7 @@ export default function AvailableDoctors() {
       {/* Title with Notification Badge */}
       <div className="flex items-center justify-center mb-2">
         <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-800 text-center">
-          {t("Available Doctors Today")}
+          {t("doctors.title")}
         </h1>
         {pendingConsultations > 0 && (
           <Badge className="ml-2 bg-red-500 text-white">
