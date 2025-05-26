@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   Table,
   TableBody,
@@ -100,6 +101,7 @@ export default function AvailableDoctors() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [currentDay, setCurrentDay] = useState("");
+  const { t, language, setLanguage } = useLanguage(); //added language 
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -359,6 +361,10 @@ export default function AvailableDoctors() {
   const handleViewProfile = (doctor: Doctor) => {
     setSelectedDoctor(doctor);
     setShowProfileModal(true);
+  };
+  //toggleLanguage
+  const toggleLanguage = () => {
+    setLanguage(language === "en" ? "tl" : "en");
   };
 
   // Update the handleRequestConsultation function to prevent multiple requests to the same doctor
