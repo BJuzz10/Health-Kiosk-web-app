@@ -61,7 +61,7 @@ export default function KioskDashboard() {
     try {
       const user = await getCurrentUser();
       await signOut();
-      router.push("/");
+      router.push("/userlogin");
       if (!user || !user.email) {
         console.error("User is null or email is missing.");
         return;
