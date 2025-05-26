@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/context/LanguageContext"; 
 
 import BPInstructionManual from "@/components/instruction-manuals/bp-instruction";
 import OxySatInstructionManual from "@/components/instruction-manuals/oxysat-instruction";
@@ -13,6 +14,7 @@ export default function HealthAppsPage() {
   const [attemptingDeepLink, setAttemptingDeepLink] = useState(false);
   const [time, setTime] = useState(new Date());
   const router = useRouter();
+  const { t, language, setLanguage } = useLanguage(); //added language
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -60,6 +62,11 @@ export default function HealthAppsPage() {
     }
   };
 
+  //toggleLanguage
+  const toggleLanguage = () => {
+    setLanguage(language === "en" ? "tl" : "en");
+  };
+
   const openOmronApp = () => {
     // Using the SplashScreenActivity from the manifest
     const intentUrl =
@@ -97,7 +104,7 @@ export default function HealthAppsPage() {
         className="absolute top-15 left-65 z-10"
         onClick={() => router.push("/medinfo")}
       >
-        Bumalik
+        {t("back.button")} 
       </Button>
 
       <h1 className="text-4xl font-extrabold text-center mb-8">
