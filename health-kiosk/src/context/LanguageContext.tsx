@@ -122,6 +122,7 @@ const translations: Record<string, Record<string, string>> = {
 
     //Available /doctors
     "doctors.title": "Available Doctors Today",
+    "doctors.available": "Showing doktors available on",
   },
   tl: {
     // Common
@@ -179,6 +180,7 @@ const translations: Record<string, Record<string, string>> = {
 
     //Available /doctors
     "doctors.title": "Mga Doktor na Available ngayon",
+    "doctors.available": "Narito ang mga doktor na available ngayong",
   },
 };
 

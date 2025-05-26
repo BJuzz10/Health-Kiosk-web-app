@@ -621,7 +621,7 @@ export default function AvailableDoctors() {
       </div>
 
       <p className="text-gray-600 mb-6 text-center">
-        Showing doctors available on {currentDay}
+        {t("doctors.available")} {currentDay}
       </p>
 
       {/* Search Input */}
