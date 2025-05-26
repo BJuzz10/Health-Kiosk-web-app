@@ -596,7 +596,7 @@ export default function AvailableDoctors() {
       );
     }
   };
-
+  // 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white p-4 flex flex-col items-center relative pt-20">
       {/* Time Display */}
