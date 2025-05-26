@@ -619,9 +619,9 @@ export default function AvailableDoctors() {
           {t("language.toggle")}
         </Button>
       </div>
-      
+
       <p className="text-gray-600 mb-6 text-center">
-        {t("Showing doctors available on {currentDay}")}
+        Showing doctors available on {currentDay}
       </p>
 
       {/* Search Input */}
