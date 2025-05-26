@@ -126,7 +126,7 @@ export default function HealthAppsPage() {
           </CardHeader>
           <CardContent className="flex flex-col items-center text-lg">
             <p className="text-gray-600 mb-6 text-center">
-              Monitor your BP using the Omron Connect app.
+              {t("deeplink.BP")}
             </p>
             <div className="flex flex-col w-full gap-3">
               <Button
@@ -149,8 +149,7 @@ export default function HealthAppsPage() {
           </CardHeader>
           <CardContent className="flex flex-col items-center text-lg">
             <p className="text-gray-600 mb-6 text-center">
-              Check your oxygen levels with the HealthTree app.
-            </p>
+              {t("deeplink.Oxi")}            </p>
             <div className="flex flex-col w-full gap-3">
               <Button
                 className="w-full py-3 text-lg bg-green-600 text-white hover:bg-green-700 mt-6"
@@ -172,7 +171,7 @@ export default function HealthAppsPage() {
           </CardHeader>
           <CardContent className="flex flex-col items-center text-lg">
             <p className="text-gray-600 mb-6 text-center">
-              Track your temperature using the Beurer Health Manager Pro App.
+              {t("deeplink.Temp")}
             </p>
             <div className="flex flex-col w-full gap-3">
               <Button
