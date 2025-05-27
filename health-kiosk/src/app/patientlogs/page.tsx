@@ -34,7 +34,7 @@ export default function PatientLogPage() {
         }
       }
 
-      setLoading(false)
+      setLoading(false);
     };
 
     fetchPatientData()
