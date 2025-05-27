@@ -33,7 +33,7 @@ export default function PatientLogPage() {
       setLoading(false)
     }
 
-    fetchLogs()
+    fetchPatientData()
   }, [supabase])
 
   return (
