@@ -251,7 +251,7 @@ export default function MedicalInformation() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white p-4 flex flex-col items-center justify-center relative">
       <div className="absolute top-4 right-6 text-gray-700 text-lg font-semibold">
-        {time && time.toLocaleTimeString()}
+        {time.toLocaleTimeString()}
       </div>
 
       <div className="absolute top-4 left-6">
@@ -321,7 +321,8 @@ export default function MedicalInformation() {
               name="temperature"
               value={formData.temperature}
               onChange={handleChange}
-              className="mt-1 bg-gray-100" {/*removed readOnly*/}
+              className="mt-1 bg-gray-100"
+              readOnly
             />
           </div>
 
