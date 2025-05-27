@@ -32,8 +32,9 @@ export default function PatientLogPage() {
         } else {
           setLogs(data || [])
         }
+      } catch (err) {
+      console.error('Unexpected error:', err);
       }
-
       setLoading(false);
     };
 
