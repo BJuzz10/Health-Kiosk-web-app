@@ -210,6 +210,17 @@ export default function MedicalInformation() {
           patient_id: patientData.id,
         });
       }
+      //temperature
+      if (formData.temperature && !isNaN(Number(formData.temperature))) {
+        measurements.push({
+          checkup_id: checkup.id,
+          type: "temperature",
+          value: Number(formData.weight),
+          unit: "kg",
+          recorded_at: now,
+          patient_id: patientData.id,
+        });
+      }
 
       if (measurements.length > 0) {
         const { error: measurementsError } = await supabase
@@ -310,8 +321,7 @@ export default function MedicalInformation() {
               name="temperature"
               value={formData.temperature}
               onChange={handleChange}
-              className="mt-1 bg-gray-100"
-              readOnly
+              className="mt-1 bg-gray-100" {/*removed readOnly*/}
             />
           </div>
 
