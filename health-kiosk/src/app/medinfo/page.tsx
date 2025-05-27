@@ -222,7 +222,7 @@ export default function MedicalInformation() {
         });
       }
       //pulse rate
-      if (formData.pulsrate && !isNaN(Number(formData.pulserate))) {
+      if (formData.pulserate && !isNaN(Number(formData.pulserate))) {
         measurements.push({
           checkup_id: checkup.id,
           type: "pulse",
