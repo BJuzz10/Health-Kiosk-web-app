@@ -14,7 +14,7 @@ export default function PatientLogPage() {
       try{
         //const supabase = createClient();
         // logs here
-        console.log("User ID:", user?.id);
+        console.log("User ID:", user.id);
 
         const { data: { user } } = await supabase.auth.getUser();
 
