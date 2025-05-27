@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
-//import { HealthData } from "@/types/health-data"; // Adjust path if needed
+import { HealthData } from "@/types/health-data";
+
 export default function PatientLogPage() {
   const supabase = createClient()
-  const [logs, setLogs] = useState<PatientLogEntry[]>([])
+  const [logs, setLogs] = useState<HealthData[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
