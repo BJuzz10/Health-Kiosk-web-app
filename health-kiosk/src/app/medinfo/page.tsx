@@ -346,6 +346,7 @@ export default function MedicalInformation() {
               value={formData.pulserate}
               onChange={handleChange}
               placeholder="BPM"
+              className="mt-1"
             />
           </div>
 
