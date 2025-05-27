@@ -30,7 +30,7 @@ export default function PatientLogPage() {
         if (vitalError || !vitalData) {
           console.error('Error fetching vital logs:', vitalError);
         } else {
-          setLogs(data || [])
+          setLogs(vitalData || [])
         }
       } catch (err) {
       console.error('Unexpected error:', err);
