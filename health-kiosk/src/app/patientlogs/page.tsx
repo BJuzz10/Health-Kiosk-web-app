@@ -6,7 +6,7 @@ import { HealthData } from "@/types/health-data"; // Adjust path if needed
 
 export default function PatientLogPage() {
   const supabase = createClient<HealthData>()
-  const [logs, setLogs] = useState<any[]>([])
+  const [logs, setLogs] = useState<PatientLogEntry[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
