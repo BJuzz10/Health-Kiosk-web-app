@@ -15,11 +15,12 @@ export default function PatientLogPage() {
         //const supabase = createClient();
         // logs here
         const { data: { user } } = await supabase.auth.getUser();
-        console.log("User ID:", user.id);
+        
         if (!user) {
           console.error('No user logged in')
           return
         }
+        console.log("User ID:", user.id);
 
         const { data: vitalData, error: vitalError } = await supabase
           .from("vital_measurements")
