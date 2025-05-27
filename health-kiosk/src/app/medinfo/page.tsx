@@ -251,7 +251,7 @@ export default function MedicalInformation() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 to-white p-4 flex flex-col items-center justify-center relative">
       <div className="absolute top-4 right-6 text-gray-700 text-lg font-semibold">
-        {time.toLocaleTimeString()}
+        {time && time.toLocaleTimeString()}
       </div>
 
       <div className="absolute top-4 left-6">
