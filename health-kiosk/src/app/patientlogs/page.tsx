@@ -16,11 +16,20 @@ export default function PatientLogPage() {
         // logs here
         const { data: { user } } = await supabase.auth.getUser();
         
-        if (!user) {
-          console.error('No user logged in')
-          return
+        if (userError || !user) {
+          throw new Error('Authentication error')
         }
-        console.log("User ID:", user.id);
+        // Get patient data
+        const { data: patientData, error: patientError } = await supabase
+          .from("patient_data")
+          .select("id")
+          .eq("email", user.email)
+          .single();
+
+        if (patientError || !patientData) {
+          throw new Error("Patient data not found");
+        }
+        //console.log("User ID:", user.id);
 
         const { data: vitalData, error: vitalError } = await supabase
           .from("vital_measurements")
@@ -29,7 +38,7 @@ export default function PatientLogPage() {
           .order('recorded_at', { ascending: false });
 
         if (vitalError || !vitalData) {
-          console.error('Error fetching vital logs:', vitalError);
+          throw new Error('Error fetching vital logs:', vitalError);
         } else {
           setLogs(vitalData || [])
         }
