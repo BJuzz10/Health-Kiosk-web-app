@@ -244,7 +244,27 @@ export default function MedicalInformation() {
         });
       }
       //systolic
+      if (formData.systolic && !isNaN(Number(formData.systolic))) {
+        measurements.push({
+          checkup_id: checkup.id,
+          type: "bp_systolic",
+          value: Number(formData.systolic),
+          unit: "mmHg",
+          recorded_at: now,
+          patient_id: patientData.id,
+        });
+      }
       //diastolic
+      if (formData.diastolic && !isNaN(Number(formData.diastolic))) {
+        measurements.push({
+          checkup_id: checkup.id,
+          type: "bp_diastolic",
+          value: Number(formData.diastolic),
+          unit: "mmHg",
+          recorded_at: now,
+          patient_id: patientData.id,
+        });
+      }
       if (measurements.length > 0) {
         const { error: measurementsError } = await supabase
           .from("vital_measurements")
@@ -311,8 +331,7 @@ export default function MedicalInformation() {
                 name="systolic"
                 value={formData.systolic}
                 onChange={handleChange}
-                placeholder="Systolic"
-                readOnly
+                placeholder="Systolic"                
               />
               <Input
                 id="diastolic"
@@ -320,7 +339,6 @@ export default function MedicalInformation() {
                 value={formData.diastolic}
                 onChange={handleChange}
                 placeholder="Diastolic"
-                readOnly
               />
             </div>
           </div>
