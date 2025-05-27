@@ -14,7 +14,10 @@ export default function PatientLogPage() {
       try{
         //const supabase = createClient();
         // logs here
-        const { data: { user } } = await supabase.auth.getUser();
+        const { 
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
         
         if (userError || !user) {
           throw new Error('Authentication error')
