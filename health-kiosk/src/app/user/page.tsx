@@ -247,7 +247,7 @@ export default function PersonalInformation() {
             onClick={() => router.push("/dashboard")}
             className="flex items-center gap-2"
           >
-            <FaChevronLeft /> Bumalik
+            <FaChevronLeft /> {t("back.button")}
           </Button>
           <div className="flex gap-2 justify-end w-full md:w-auto">
             <Button
