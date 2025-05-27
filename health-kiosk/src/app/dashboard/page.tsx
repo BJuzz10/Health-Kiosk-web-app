@@ -7,6 +7,7 @@ import {
   FaPrint,
   FaSignOutAlt,
   FaHeartbeat, // Replaced with a more appropriate medical icon
+  FaHistory, //reused History icon for log history
 } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
