@@ -407,7 +407,7 @@ function PatientDataContent() {
         <div className="flex flex-col sm:flex-row items-center justify-between w-full mb-4">
           <Button
             variant="outline"
-            onClick={() => router.push(`/patientinfo?id=${patientId}`)}
+            onClick={() => router.push(`/patientinfo?id=${patientIdParam}`)}
             className="flex items-center gap-2"
           >
             <FaChevronLeft /> {translations.Backbutton}
