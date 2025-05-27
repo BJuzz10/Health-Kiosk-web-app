@@ -333,7 +333,7 @@ function PrescriptionsContent() {
         <div className="mt-auto">
           <Button
             variant="outline"
-            onClick={() => router.push("/admindash")}
+            onClick={() => router.push(`/patientdata?id=${patientIdParam}`)}
             className="flex items-center gap-2 w-full"
           >
             <FaArrowLeft size={14} /> Back to Dashboard
