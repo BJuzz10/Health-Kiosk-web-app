@@ -86,7 +86,7 @@ const translations: Record<string, Record<string, string>> = {
 
     // Dashboard
     "dashboard.homepage": "Homepage",
-    "dashboard.personal.data": "Show Personal Data",
+    "dashboard.personal.data": "Personal Data",
     "dashboard.available.doctors": "Available Doctors",
     "dashboard.medical.info": "Medical Information",
     "dashboard.print.prescription": "Print Prescription",
@@ -150,7 +150,7 @@ const translations: Record<string, Record<string, string>> = {
 
     // Dashboard
     "dashboard.homepage": "Homepage",
-    "dashboard.personal.data": "Ipakita ang personal na datos",
+    "dashboard.personal.data": "Personal na datos",
     "dashboard.available.doctors": "Mga available na Doktor",
     "dashboard.medical.info": "Impormasyon Medikal",
     "dashboard.print.prescription": "Iprint ang reseta",
