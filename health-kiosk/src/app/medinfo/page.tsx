@@ -322,7 +322,6 @@ export default function MedicalInformation() {
               value={formData.temperature}
               onChange={handleChange}
               className="mt-1 bg-gray-100"
-              readOnly
             />
           </div>
 
