@@ -147,7 +147,6 @@ export default function KioskDashboard() {
             <Card
               key={index}
               className="w-full flex flex-col items-center justify-center gap-4 p-6 rounded-2xl shadow-md transition-all duration-200 hover:scale-105 cursor-pointer bg-white text-center"
-              ${index === array.length - 1 && array.length % 2 !== 0 ? 'sm:col-span-2 sm:mx-auto sm:w-1/2' : ''}`} //attempts option 2 from Friday
               onClick={item.onClick}
             >
               {item.icon}
