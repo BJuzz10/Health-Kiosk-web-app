@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { Database } from "@/types/supabase"; // Adjust path if needed
+import { HealthData } from "@/types/health-data"; // Adjust path if needed
 
 export default function PatientLogPage() {
-  const supabase = createClientComponentClient<Database>()
+  const supabase = createClient<HealthData>()
   const [logs, setLogs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchLogs = async () => {
+    const fetchPatientData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (!user) {
@@ -18,14 +18,14 @@ export default function PatientLogPage() {
         return
       }
 
-      const { data, error } = await supabase
-        .from('vital_signs')
+      const { data: vitalData, error: vitalError } = await supabase
+        .from("vital_measurements")
         .select('recorded_at, type, value, unit')
-        .eq('user_id', user.id)
-        .order('recorded_at', { ascending: false })
+        .eq('patient_id', patientId)
+        .order('recorded_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching vital logs:', error.message)
+      if (vitalError || !vitalData) {
+        console.error('Error fetching vital logs:', vitalError);
       } else {
         setLogs(data || [])
       }
