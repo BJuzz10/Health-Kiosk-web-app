@@ -215,8 +215,8 @@ export default function MedicalInformation() {
         measurements.push({
           checkup_id: checkup.id,
           type: "temperature",
-          value: Number(formData.weight),
-          unit: "kg",
+          value: Number(formData.temperature),
+          unit: "°C",
           recorded_at: now,
           patient_id: patientData.id,
         });
