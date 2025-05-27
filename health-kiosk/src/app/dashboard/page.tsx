@@ -137,6 +137,11 @@ export default function KioskDashboard() {
               text: t("dashboard.print.prescription"),
               onClick: () => router.push("/prescriptions"),
             },
+            {
+              icon: <FaHistory className="text-2xl text-yellow-600" />,
+              text: t("dashboard.logging"),
+              onClick: () => router.push("/patientlogs"),
+            },
           ].map((item, index) => (
             <Card
               key={index}
