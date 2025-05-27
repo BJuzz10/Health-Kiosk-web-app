@@ -35,7 +35,7 @@ export default function PatientLogPage() {
       }
 
       setLoading(false)
-    }
+    };
 
     fetchPatientData()
   }, [supabase])
