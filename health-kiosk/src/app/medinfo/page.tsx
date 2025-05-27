@@ -221,7 +221,20 @@ export default function MedicalInformation() {
           patient_id: patientData.id,
         });
       }
-
+      //pulse rate
+      if (formData.pulsrate && !isNaN(Number(formData.pulserate))) {
+        measurements.push({
+          checkup_id: checkup.id,
+          type: "pulse",
+          value: Number(formData.pulserate),
+          unit: "bpm",
+          recorded_at: now,
+          patient_id: patientData.id,
+        });
+      }
+      //oxygensat
+      //systolic
+      //diastolic
       if (measurements.length > 0) {
         const { error: measurementsError } = await supabase
           .from("vital_measurements")
@@ -333,7 +346,6 @@ export default function MedicalInformation() {
               value={formData.pulserate}
               onChange={handleChange}
               placeholder="BPM"
-              readOnly
             />
           </div>
 
