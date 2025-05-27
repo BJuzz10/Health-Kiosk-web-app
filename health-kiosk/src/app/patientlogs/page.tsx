@@ -13,6 +13,8 @@ export default function PatientLogPage() {
     const fetchPatientData = async () => {
       try{
         //const supabase = createClient();
+        // logs here
+        console.log("User ID:", user?.id);
 
         const { data: { user } } = await supabase.auth.getUser();
 
