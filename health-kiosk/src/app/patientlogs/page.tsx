@@ -5,29 +5,33 @@ import { createClient } from "@/utils/supabase/client";
 import { HealthData } from "@/types/health-data";
 
 export default function PatientLogPage() {
-  const supabase = createClient()
+  //const supabase = createClient()
   const [logs, setLogs] = useState<HealthData[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchPatientData = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      try{
+        const supabase = createClient();
 
-      if (!user) {
-        console.error('No user logged in')
-        return
-      }
+        const { data: { user } } = await supabase.auth.getUser();
 
-      const { data: vitalData, error: vitalError } = await supabase
-        .from("vital_measurements")
-        .select('recorded_at, type, value, unit')
-        .eq('patient_id', patientId)
-        .order('recorded_at', { ascending: false });
+        if (!user) {
+          console.error('No user logged in')
+          return
+        }
 
-      if (vitalError || !vitalData) {
-        console.error('Error fetching vital logs:', vitalError);
-      } else {
-        setLogs(data || [])
+        const { data: vitalData, error: vitalError } = await supabase
+          .from("vital_measurements")
+          .select('recorded_at, type, value, unit')
+          .eq('patient_id', patientId)
+          .order('recorded_at', { ascending: false });
+
+        if (vitalError || !vitalData) {
+          console.error('Error fetching vital logs:', vitalError);
+        } else {
+          setLogs(data || [])
+        }
       }
 
       setLoading(false)
