@@ -368,7 +368,7 @@ function PatientInfoContent() {
       <div className="flex flex-col md:flex-row justify-between w-full max-w-5xl mt-6 gap-2">
         <Button
           variant="outline"
-          onClick={() => router.push("/admindash")}
+          onClick={() => router.push("/appointment")}
           className="flex items-center gap-2"
         >
           <FaChevronLeft /> Back
