@@ -37,7 +37,7 @@ export default function PatientLogPage() {
         const { data: vitalData, error: vitalError } = await supabase
           .from("vital_measurements")
           .select('recorded_at, type, value, unit')
-          .eq('patient_id', user.id)
+          .eq('patient_id', patientData.id) //removed user.id
           .order('recorded_at', { ascending: false });
 
         if (vitalError || !vitalData) {
