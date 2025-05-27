@@ -233,6 +233,16 @@ export default function MedicalInformation() {
         });
       }
       //oxygensat
+      if (formData.oxygenSaturation && !isNaN(Number(formData.oxygenSaturation))) {
+        measurements.push({
+          checkup_id: checkup.id,
+          type: "oxygen_saturation",
+          value: Number(formData.oxygenSaturation),
+          unit: "%",
+          recorded_at: now,
+          patient_id: patientData.id,
+        });
+      }
       //systolic
       //diastolic
       if (measurements.length > 0) {
@@ -323,7 +333,6 @@ export default function MedicalInformation() {
               value={formData.oxygenSaturation}
               onChange={handleChange}
               placeholder="SpO2 %"
-              readOnly
             />
           </div>
 
