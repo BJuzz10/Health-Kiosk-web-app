@@ -146,7 +146,7 @@ export default function KioskDashboard() {
           ].map((item, index) => (
             <Card
               key={index}
-              className="w-full flex items-center justify-center gap-4 p-6 rounded-2xl shadow-md transition-all duration-200 hover:scale-105 cursor-pointer bg-white text-center"
+              className="w-full flex items-center justify-center gap-4 p-6 text-xl font-semibold rounded-2xl shadow-lg hover:scale-105 transition-all"
               onClick={item.onClick}
             >
               {item.icon}
