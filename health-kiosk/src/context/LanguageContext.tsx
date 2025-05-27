@@ -90,6 +90,7 @@ const translations: Record<string, Record<string, string>> = {
     "dashboard.available.doctors": "Available Doctors",
     "dashboard.medical.info": "Medical Information",
     "dashboard.print.prescription": "Print Prescription",
+    "dashboard.logging": "See Medical History",
 
     // Admin Dashboard
     "admin.homepage": "Doctor's Home Page",
@@ -153,6 +154,7 @@ const translations: Record<string, Record<string, string>> = {
     "dashboard.available.doctors": "Mga available na Doktor",
     "dashboard.medical.info": "Impormasyon Medikal",
     "dashboard.print.prescription": "Iprint ang reseta",
+    "dashboard.logging": "Tignan ang Medikal na Kasaysayan",
 
     // Admin Dashboard
     "admin.homepage": "Doctor's Home Page",
