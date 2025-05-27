@@ -31,3 +31,9 @@ export interface CsvParseResult {
   headers: string[];
   data: Record<string, string>[];
 }
+export interface PatientLogEntry {
+  recorded_at: string;
+  type: string;
+  value: string;
+  unit: string;
+}
